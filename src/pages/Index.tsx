@@ -1,12 +1,135 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useMemo, useRef } from 'react';
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
+import FilterBar from '@/components/FilterBar';
+import ShoeCatalog from '@/components/ShoeCatalog';
+import Footer from '@/components/Footer';
+import { mockShoes, getUniqueBrands, getUniqueSizes, getPriceRange, Shoe } from '@/types/shoe';
+import { toast } from 'sonner';
 
 const Index = () => {
+  const catalogRef = useRef<HTMLDivElement>(null);
+  
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<number[]>([]);
+  
+  // Price range from data
+  const { min: minPrice, max: maxPrice } = getPriceRange(mockShoes);
+  const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice]);
+  
+  // Wishlist state (will be persisted to DB in Phase 3)
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  
+  // Computed values
+  const availableBrands = useMemo(() => getUniqueBrands(mockShoes), []);
+  const availableSizes = useMemo(() => getUniqueSizes(mockShoes), []);
+  
+  // Filter logic
+  const filteredShoes = useMemo(() => {
+    return mockShoes.filter((shoe) => {
+      // Search filter
+      const matchesSearch = 
+        searchQuery === '' ||
+        shoe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        shoe.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Brand filter
+      const matchesBrand = 
+        selectedBrands.length === 0 ||
+        selectedBrands.includes(shoe.brand);
+      
+      // Size filter
+      const matchesSize = 
+        selectedSizes.length === 0 ||
+        shoe.sizes.some(size => selectedSizes.includes(size));
+      
+      // Price filter
+      const matchesPrice = 
+        shoe.price >= priceRange[0] && shoe.price <= priceRange[1];
+      
+      return matchesSearch && matchesBrand && matchesSize && matchesPrice;
+    });
+  }, [searchQuery, selectedBrands, selectedSizes, priceRange]);
+  
+  // Handlers
+  const handleBrandToggle = (brand: string) => {
+    setSelectedBrands(prev =>
+      prev.includes(brand)
+        ? prev.filter(b => b !== brand)
+        : [...prev, brand]
+    );
+  };
+  
+  const handleSizeToggle = (size: number) => {
+    setSelectedSizes(prev =>
+      prev.includes(size)
+        ? prev.filter(s => s !== size)
+        : [...prev, size]
+    );
+  };
+  
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedBrands([]);
+    setSelectedSizes([]);
+    setPriceRange([minPrice, maxPrice]);
+  };
+  
+  const hasActiveFilters = 
+    searchQuery !== '' ||
+    selectedBrands.length > 0 ||
+    selectedSizes.length > 0 ||
+    priceRange[0] !== minPrice ||
+    priceRange[1] !== maxPrice;
+  
+  const handleWishlistClick = (shoe: Shoe) => {
+    // In Phase 3, this will require authentication
+    if (wishlistIds.includes(shoe.id)) {
+      setWishlistIds(prev => prev.filter(id => id !== shoe.id));
+      toast.success(`Removed ${shoe.name} from wishlist`);
+    } else {
+      setWishlistIds(prev => [...prev, shoe.id]);
+      toast.success(`Added ${shoe.name} to wishlist`);
+    }
+  };
+  
+  const scrollToCatalog = () => {
+    catalogRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <HeroSection onBrowseClick={scrollToCatalog} />
+      
+      <div ref={catalogRef} id="catalog">
+        <FilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedBrands={selectedBrands}
+          onBrandToggle={handleBrandToggle}
+          availableBrands={availableBrands}
+          selectedSizes={selectedSizes}
+          onSizeToggle={handleSizeToggle}
+          availableSizes={availableSizes}
+          priceRange={priceRange}
+          onPriceChange={setPriceRange}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
+        
+        <ShoeCatalog
+          shoes={filteredShoes}
+          onWishlistClick={handleWishlistClick}
+          wishlistIds={wishlistIds}
+        />
       </div>
+      
+      <Footer />
     </div>
   );
 };
