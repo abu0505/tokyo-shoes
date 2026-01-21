@@ -1,10 +1,19 @@
-import { Search, X } from 'lucide-react';
+import { Search, X, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useState } from 'react';
 import { formatPrice } from '@/lib/format';
+
+export type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-asc';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -21,6 +30,8 @@ interface FilterBarProps {
   maxPrice: number;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  sortOption: SortOption;
+  onSortChange: (option: SortOption) => void;
 }
 
 const FilterBar = ({
@@ -38,16 +49,23 @@ const FilterBar = ({
   maxPrice,
   onClearFilters,
   hasActiveFilters,
+  sortOption,
+  onSortChange,
 }: FilterBarProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
-  
+  const sortLabels: Record<SortOption, string> = {
+    'newest': 'Newest First',
+    'price-low': 'Price: Low to High',
+    'price-high': 'Price: High to Low',
+    'name-asc': 'A-Z (Name)',
+  };
 
   return (
     <div className="bg-secondary py-6 sticky top-0 z-40">
       <div className="container">
-        {/* Search Bar */}
-        <div className="flex items-center gap-4 mb-4">
+        {/* Search Bar and Sort */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -66,6 +84,19 @@ const FilterBar = ({
               </button>
             )}
           </div>
+
+          {/* Sort Dropdown */}
+          <Select value={sortOption} onValueChange={(val) => onSortChange(val as SortOption)}>
+            <SelectTrigger className="w-full sm:w-[200px] border-2 border-foreground py-6 font-bold">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="price-low">Price: Low to High</SelectItem>
+              <SelectItem value="price-high">Price: High to Low</SelectItem>
+              <SelectItem value="name-asc">A-Z (Name)</SelectItem>
+            </SelectContent>
+          </Select>
           
           <Button
             variant="outline"
