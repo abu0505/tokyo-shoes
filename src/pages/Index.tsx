@@ -1,10 +1,12 @@
 import { useState, useMemo, useRef } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import FilterBar from '@/components/FilterBar';
+import FilterBar, { SortOption } from '@/components/FilterBar';
 import ShoeCatalog from '@/components/ShoeCatalog';
+import RecentlyViewed from '@/components/RecentlyViewed';
 import Footer from '@/components/Footer';
 import { mockShoes, getUniqueBrands, getUniqueSizes, getPriceRange, Shoe } from '@/types/shoe';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -14,6 +16,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<number[]>([]);
+  const [sortOption, setSortOption] = useState<SortOption>('newest');
   
   // Price range from data
   const { min: minPrice, max: maxPrice } = getPriceRange(mockShoes);
@@ -22,13 +25,16 @@ const Index = () => {
   // Wishlist state (will be persisted to DB in Phase 3)
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   
+  // Recently viewed
+  const { recentlyViewed } = useRecentlyViewed();
+  
   // Computed values
   const availableBrands = useMemo(() => getUniqueBrands(mockShoes), []);
   const availableSizes = useMemo(() => getUniqueSizes(mockShoes), []);
   
-  // Filter logic
+  // Filter and sort logic
   const filteredShoes = useMemo(() => {
-    return mockShoes.filter((shoe) => {
+    let result = mockShoes.filter((shoe) => {
       // Search filter
       const matchesSearch = 
         searchQuery === '' ||
@@ -51,7 +57,25 @@ const Index = () => {
       
       return matchesSearch && matchesBrand && matchesSize && matchesPrice;
     });
-  }, [searchQuery, selectedBrands, selectedSizes, priceRange]);
+
+    // Apply sorting
+    switch (sortOption) {
+      case 'newest':
+        result = result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        break;
+      case 'price-low':
+        result = result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        result = result.sort((a, b) => b.price - a.price);
+        break;
+      case 'name-asc':
+        result = result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    return result;
+  }, [searchQuery, selectedBrands, selectedSizes, priceRange, sortOption]);
   
   // Handlers
   const handleBrandToggle = (brand: string) => {
@@ -120,6 +144,8 @@ const Index = () => {
           maxPrice={maxPrice}
           onClearFilters={handleClearFilters}
           hasActiveFilters={hasActiveFilters}
+          sortOption={sortOption}
+          onSortChange={setSortOption}
         />
         
         <ShoeCatalog
@@ -128,6 +154,13 @@ const Index = () => {
           wishlistIds={wishlistIds}
         />
       </div>
+      
+      {/* Recently Viewed Section */}
+      <RecentlyViewed
+        recentlyViewedIds={recentlyViewed}
+        onWishlistClick={handleWishlistClick}
+        wishlistIds={wishlistIds}
+      />
       
       <Footer />
     </div>

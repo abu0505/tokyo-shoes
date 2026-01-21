@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,10 @@ import { mockShoes, isNewArrival, Shoe } from '@/types/shoe';
 import { formatPrice } from '@/lib/format';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ImageZoom from '@/components/ImageZoom';
+import RelatedProducts from '@/components/RelatedProducts';
+import WhatsAppButton from '@/components/WhatsAppButton';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { toast } from 'sonner';
 
 const ProductDetail = () => {
@@ -14,8 +18,22 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const { addToRecentlyViewed } = useRecentlyViewed();
 
   const shoe = mockShoes.find((s) => s.id === id);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (shoe) {
+      addToRecentlyViewed(shoe.id);
+    }
+  }, [shoe?.id]);
 
   if (!shoe) {
     return (
@@ -42,11 +60,26 @@ const ProductDetail = () => {
 
   const handleWishlistClick = () => {
     setIsWishlisted(!isWishlisted);
+    if (isWishlisted) {
+      setWishlistIds((prev) => prev.filter((wid) => wid !== shoe.id));
+    } else {
+      setWishlistIds((prev) => [...prev, shoe.id]);
+    }
     toast.success(
       isWishlisted 
         ? `Removed ${shoe.name} from wishlist` 
         : `Added ${shoe.name} to wishlist`
     );
+  };
+
+  const handleRelatedWishlistClick = (relatedShoe: Shoe) => {
+    if (wishlistIds.includes(relatedShoe.id)) {
+      setWishlistIds((prev) => prev.filter((wid) => wid !== relatedShoe.id));
+      toast.success(`Removed ${relatedShoe.name} from wishlist`);
+    } else {
+      setWishlistIds((prev) => [...prev, relatedShoe.id]);
+      toast.success(`Added ${relatedShoe.name} to wishlist`);
+    }
   };
 
   const handleShare = async () => {
@@ -86,18 +119,18 @@ const ProductDetail = () => {
         </Button>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Image Section */}
+          {/* Image Section with Zoom */}
           <div className="relative">
             <div className="aspect-square overflow-hidden border-2 border-foreground bg-secondary">
-              <img
+              <ImageZoom
                 src={shoe.image}
                 alt={shoe.name}
-                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                className="w-full h-full"
               />
             </div>
             
             {/* Badges */}
-            <div className="absolute top-6 left-6 flex flex-col gap-2">
+            <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
               {isNew && (
                 <Badge className="bg-accent text-accent-foreground font-bold px-4 py-2 text-sm">
                   NEW ARRIVAL
@@ -235,7 +268,17 @@ const ProductDetail = () => {
         </div>
       </main>
 
+      {/* Related Products Section */}
+      <RelatedProducts
+        currentShoe={shoe}
+        onWishlistClick={handleRelatedWishlistClick}
+        wishlistIds={wishlistIds}
+      />
+
       <Footer />
+
+      {/* WhatsApp Floating Button */}
+      <WhatsAppButton shoe={shoe} selectedSize={selectedSize} />
     </div>
   );
 };
