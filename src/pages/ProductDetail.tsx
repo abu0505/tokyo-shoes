@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,10 +105,20 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div 
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <Header />
       
-      <main className="container py-8">
+      <motion.main 
+        className="container py-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -266,7 +277,7 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
-      </main>
+      </motion.main>
 
       {/* Related Products Section */}
       <RelatedProducts
@@ -279,7 +290,7 @@ const ProductDetail = () => {
 
       {/* WhatsApp Floating Button */}
       <WhatsAppButton shoe={shoe} selectedSize={selectedSize} />
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,12 +1,11 @@
 import { useState, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import FilterBar, { SortOption } from '@/components/FilterBar';
 import ShoeCatalog from '@/components/ShoeCatalog';
-import RecentlyViewed from '@/components/RecentlyViewed';
 import Footer from '@/components/Footer';
 import { mockShoes, getUniqueBrands, getUniqueSizes, getPriceRange, Shoe } from '@/types/shoe';
-import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -24,9 +23,6 @@ const Index = () => {
   
   // Wishlist state (will be persisted to DB in Phase 3)
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
-  
-  // Recently viewed
-  const { recentlyViewed } = useRecentlyViewed();
   
   // Computed values
   const availableBrands = useMemo(() => getUniqueBrands(mockShoes), []);
@@ -124,11 +120,23 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div 
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <Header />
       <HeroSection onBrowseClick={scrollToCatalog} />
       
-      <div ref={catalogRef} id="catalog">
+      <motion.div 
+        ref={catalogRef} 
+        id="catalog"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
         <FilterBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -153,17 +161,10 @@ const Index = () => {
           onWishlistClick={handleWishlistClick}
           wishlistIds={wishlistIds}
         />
-      </div>
-      
-      {/* Recently Viewed Section */}
-      <RecentlyViewed
-        recentlyViewedIds={recentlyViewed}
-        onWishlistClick={handleWishlistClick}
-        wishlistIds={wishlistIds}
-      />
+      </motion.div>
       
       <Footer />
-    </div>
+    </motion.div>
   );
 };
 

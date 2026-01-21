@@ -1,4 +1,9 @@
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import RecentlyViewedDropdown from './RecentlyViewedDropdown';
+
 const Header = () => {
+  const { recentlyViewed } = useRecentlyViewed();
+
   return (
     <header className="bg-background border-b-2 border-foreground py-4 sticky top-0 z-50">
       <div className="container flex items-center justify-between">
@@ -21,8 +26,12 @@ const Header = () => {
           </a>
         </nav>
         
-        {/* Auth Buttons - Coming in Phase 3 */}
+        {/* Right Side Actions */}
         <div className="flex items-center gap-4">
+          {/* Recently Viewed Dropdown */}
+          <RecentlyViewedDropdown recentlyViewedIds={recentlyViewed} />
+          
+          {/* Auth Buttons - Coming in Phase 3 */}
           <button className="text-sm font-bold tracking-wide hover:text-accent transition-colors">
             LOGIN
           </button>
