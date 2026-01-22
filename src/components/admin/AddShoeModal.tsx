@@ -1,0 +1,365 @@
+import { useState, useRef } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Upload, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { DbShoe } from '@/types/database';
+import { toast } from 'sonner';
+
+const shoeSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  brand: z.string().min(1, 'Brand is required'),
+  price: z.number().min(1, 'Price must be greater than 0'),
+  status: z.enum(['in_stock', 'sold_out']),
+  sizes: z.string().min(1, 'At least one size is required'),
+});
+
+type ShoeFormData = z.infer<typeof shoeSchema>;
+
+interface AddShoeModalProps {
+  open: boolean;
+  onClose: () => void;
+  shoe?: DbShoe | null;
+}
+
+const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(shoe?.image_url || null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const isEditing = !!shoe;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = useForm<ShoeFormData>({
+    resolver: zodResolver(shoeSchema),
+    defaultValues: {
+      name: shoe?.name || '',
+      brand: shoe?.brand || '',
+      price: shoe?.price || 0,
+      status: shoe?.status || 'in_stock',
+      sizes: shoe?.sizes?.join(',') || '',
+    },
+  });
+
+  // Reset form when shoe changes
+  useState(() => {
+    if (shoe) {
+      reset({
+        name: shoe.name,
+        brand: shoe.brand,
+        price: shoe.price,
+        status: shoe.status,
+        sizes: shoe.sizes.join(','),
+      });
+      setImagePreview(shoe.image_url);
+    } else {
+      reset({
+        name: '',
+        brand: '',
+        price: 0,
+        status: 'in_stock',
+        sizes: '',
+      });
+      setImagePreview(null);
+    }
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `shoes/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('shoe-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('shoe-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: ShoeFormData) => {
+      setIsUploading(true);
+      
+      let imageUrl = shoe?.image_url || null;
+      
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
+      const sizes = data.sizes
+        .split(',')
+        .map(s => parseInt(s.trim()))
+        .filter(s => !isNaN(s));
+
+      const shoeData = {
+        name: data.name,
+        brand: data.brand,
+        price: data.price,
+        status: data.status,
+        sizes,
+        image_url: imageUrl,
+      };
+
+      if (isEditing && shoe) {
+        const { error } = await supabase
+          .from('shoes')
+          .update(shoeData)
+          .eq('id', shoe.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('shoes')
+          .insert([shoeData]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-shoes'] });
+      queryClient.invalidateQueries({ queryKey: ['shoes'] });
+      toast.success(isEditing ? 'Shoe updated' : 'Shoe added');
+      handleClose();
+    },
+    onError: (error) => {
+      toast.error('Failed to save: ' + error.message);
+    },
+    onSettled: () => {
+      setIsUploading(false);
+    },
+  });
+
+  const handleClose = () => {
+    reset();
+    setImageFile(null);
+    setImagePreview(null);
+    onClose();
+  };
+
+  const onSubmit = (data: ShoeFormData) => {
+    saveMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg border-2 border-foreground">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-black">
+            {isEditing ? 'Edit Shoe' : 'Add a New Shoe'}
+          </DialogTitle>
+          {!isEditing && (
+            <p className="text-muted-foreground text-sm">
+              Fill out the form below to add a new shoe to the inventory.
+            </p>
+          )}
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label className="font-bold text-sm tracking-wide">SHOE IMAGE</Label>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors relative"
+            >
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover mx-auto rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Click or drag to upload
+                  </p>
+                </>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Name & Brand Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="font-bold text-sm tracking-wide">
+                NAME
+              </Label>
+              <Input
+                id="name"
+                placeholder="e.g., Air Jordan 1"
+                className="border-2 border-foreground focus:border-accent"
+                {...register('name')}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="brand" className="font-bold text-sm tracking-wide">
+                BRAND
+              </Label>
+              <Input
+                id="brand"
+                placeholder="e.g., Nike"
+                className="border-2 border-foreground focus:border-accent"
+                {...register('brand')}
+              />
+              {errors.brand && (
+                <p className="text-sm text-destructive">{errors.brand.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Price & Status Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price" className="font-bold text-sm tracking-wide">
+                PRICE (₹)
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                placeholder="e.g., 18500"
+                className="border-2 border-foreground focus:border-accent"
+                {...register('price', { valueAsNumber: true })}
+              />
+              {errors.price && (
+                <p className="text-sm text-destructive">{errors.price.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold text-sm tracking-wide">STATUS</Label>
+              <Select
+                value={watch('status')}
+                onValueChange={(value) => setValue('status', value as 'in_stock' | 'sold_out')}
+              >
+                <SelectTrigger className="border-2 border-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in_stock">In Stock</SelectItem>
+                  <SelectItem value="sold_out">Sold Out</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Sizes */}
+          <div className="space-y-2">
+            <Label htmlFor="sizes" className="font-bold text-sm tracking-wide">
+              SIZES
+            </Label>
+            <Input
+              id="sizes"
+              placeholder="e.g., 8,9,10,11"
+              className="border-2 border-foreground focus:border-accent"
+              {...register('sizes')}
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter available sizes, separated by commas.
+            </p>
+            {errors.sizes && (
+              <p className="text-sm text-destructive">{errors.sizes.message}</p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="border-2 border-foreground font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={saveMutation.isPending || isUploading}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
+            >
+              {saveMutation.isPending || isUploading
+                ? 'Saving...'
+                : isEditing
+                ? 'Update Shoe'
+                : 'Add Shoe'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddShoeModal;

@@ -1,4 +1,4 @@
-import { Clock, X } from 'lucide-react';
+import { Eye, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { mockShoes } from '@/types/shoe';
 import { formatPrice } from '@/lib/format';
@@ -26,7 +26,7 @@ const RecentlyViewedDropdown = ({ recentlyViewedIds }: RecentlyViewedDropdownPro
     <Popover>
       <PopoverTrigger asChild>
         <button className="relative p-2 hover:bg-accent/10 rounded-lg transition-colors group">
-          <Clock className="w-5 h-5" />
+          <Eye className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 bg-accent text-background text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {recentShoes.length}
           </span>
