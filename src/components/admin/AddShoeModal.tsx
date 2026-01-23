@@ -195,7 +195,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg border-2 border-foreground">
+      <DialogContent className="max-w-[75vw] max-h-[80vh] overflow-y-auto border-2 border-foreground">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black">
             {isEditing ? 'Edit Shoe' : 'Add a New Shoe'}
@@ -207,20 +207,20 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
           )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Image Upload */}
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-stretch">
+          {/* Left Column: Image Upload */}
+          <div className="sm:col-span-6 flex flex-col space-y-2">
             <Label className="font-bold text-sm tracking-wide">SHOE IMAGE</Label>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors relative"
+              className="border-2 border-dashed border-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors relative flex-1 flex flex-col items-center justify-center bg-muted/20"
             >
               {imagePreview ? (
-                <div className="relative">
+                <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-32 h-32 object-cover mx-auto rounded"
+                    className="max-w-full max-h-full object-contain rounded"
                   />
                   <button
                     type="button"
@@ -229,16 +229,19 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
                       setImageFile(null);
                       setImagePreview(null);
                     }}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
                 <>
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
+                  <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground font-medium">
                     Click or drag to upload
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG, or WEBP
                   </p>
                 </>
               )}
@@ -252,112 +255,117 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
             </div>
           </div>
 
-          {/* Name & Brand Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="font-bold text-sm tracking-wide">
-                NAME
-              </Label>
-              <Input
-                id="name"
-                placeholder="e.g., Air Jordan 1"
-                className="border-2 border-foreground focus:border-accent"
-                {...register('name')}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="brand" className="font-bold text-sm tracking-wide">
-                BRAND
-              </Label>
-              <Input
-                id="brand"
-                placeholder="e.g., Nike"
-                className="border-2 border-foreground focus:border-accent"
-                {...register('brand')}
-              />
-              {errors.brand && (
-                <p className="text-sm text-destructive">{errors.brand.message}</p>
-              )}
-            </div>
-          </div>
+          {/* Right Column: Input Fields */}
+          <div className="sm:col-span-6 flex flex-col">
+            <div className="space-y-6">
+              {/* Name & Brand Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="font-bold text-sm tracking-wide">
+                    NAME
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Air Jordan 1"
+                    className="border-2 border-foreground focus:border-accent"
+                    {...register('name')}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand" className="font-bold text-sm tracking-wide">
+                    BRAND
+                  </Label>
+                  <Input
+                    id="brand"
+                    placeholder="e.g., Nike"
+                    className="border-2 border-foreground focus:border-accent"
+                    {...register('brand')}
+                  />
+                  {errors.brand && (
+                    <p className="text-sm text-destructive">{errors.brand.message}</p>
+                  )}
+                </div>
+              </div>
 
-          {/* Price & Status Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price" className="font-bold text-sm tracking-wide">
-                PRICE (₹)
-              </Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="e.g., 18500"
-                className="border-2 border-foreground focus:border-accent"
-                {...register('price', { valueAsNumber: true })}
-              />
-              {errors.price && (
-                <p className="text-sm text-destructive">{errors.price.message}</p>
-              )}
+              {/* Price & Status Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="font-bold text-sm tracking-wide">
+                    PRICE (₹)
+                  </Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    placeholder="e.g., 18500"
+                    className="border-2 border-foreground focus:border-accent"
+                    {...register('price', { valueAsNumber: true })}
+                  />
+                  {errors.price && (
+                    <p className="text-sm text-destructive">{errors.price.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold text-sm tracking-wide">STATUS</Label>
+                  <Select
+                    value={watch('status')}
+                    onValueChange={(value) => setValue('status', value as 'in_stock' | 'sold_out')}
+                  >
+                    <SelectTrigger className="border-2 border-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in_stock">In Stock</SelectItem>
+                      <SelectItem value="sold_out">Sold Out</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Sizes */}
+              <div className="space-y-2">
+                <Label htmlFor="sizes" className="font-bold text-sm tracking-wide">
+                  SIZES
+                </Label>
+                <Input
+                  id="sizes"
+                  placeholder="e.g., 8,9,10,11"
+                  className="border-2 border-foreground focus:border-accent"
+                  {...register('sizes')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter available sizes, separated by commas.
+                </p>
+                {errors.sizes && (
+                  <p className="text-sm text-destructive">{errors.sizes.message}</p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="font-bold text-sm tracking-wide">STATUS</Label>
-              <Select
-                value={watch('status')}
-                onValueChange={(value) => setValue('status', value as 'in_stock' | 'sold_out')}
+
+            {/* Actions */}
+            <div className="grid grid-cols-6 gap-3 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="col-span-2 border-2 border-foreground font-bold hover:bg-black hover:text-white transition-colors"
               >
-                <SelectTrigger className="border-2 border-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in_stock">In Stock</SelectItem>
-                  <SelectItem value="sold_out">Sold Out</SelectItem>
-                </SelectContent>
-              </Select>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saveMutation.isPending || isUploading}
+                className="col-span-4 bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
+              >
+                {saveMutation.isPending || isUploading
+                  ? 'Saving...'
+                  : isEditing
+                    ? 'Update Shoe'
+                    : 'Add Shoe'}
+              </Button>
             </div>
-          </div>
-
-          {/* Sizes */}
-          <div className="space-y-2">
-            <Label htmlFor="sizes" className="font-bold text-sm tracking-wide">
-              SIZES
-            </Label>
-            <Input
-              id="sizes"
-              placeholder="e.g., 8,9,10,11"
-              className="border-2 border-foreground focus:border-accent"
-              {...register('sizes')}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter available sizes, separated by commas.
-            </p>
-            {errors.sizes && (
-              <p className="text-sm text-destructive">{errors.sizes.message}</p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="border-2 border-foreground font-bold"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveMutation.isPending || isUploading}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
-            >
-              {saveMutation.isPending || isUploading
-                ? 'Saving...'
-                : isEditing
-                  ? 'Update Shoe'
-                  : 'Add Shoe'}
-            </Button>
           </div>
         </form>
       </DialogContent>

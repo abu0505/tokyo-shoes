@@ -131,7 +131,7 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
       {/* Summary */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <StarRating rating={Math.round(averageRating)} size="md" />
+          <StarRating rating={averageRating} size="md" />
           <span className="font-bold text-lg">
             {averageRating.toFixed(1)}
           </span>

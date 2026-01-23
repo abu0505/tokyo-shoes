@@ -23,10 +23,10 @@ const ProductImageZoom = ({ src, alt, className = '' }: ProductImageZoomProps) =
 
     const rect = containerRef.current.getBoundingClientRect();
     const img = imageRef.current;
-    
+
     // Cursor position relative to container
-    let x = e.clientX - rect.left;
-    let y = e.clientY - rect.top;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     // Lens half size for centering
     const lensHalf = LENS_SIZE / 2;
@@ -34,9 +34,9 @@ const ProductImageZoom = ({ src, alt, className = '' }: ProductImageZoomProps) =
     // Clamp lens position within image bounds
     const maxX = img.offsetWidth - LENS_SIZE;
     const maxY = img.offsetHeight - LENS_SIZE;
-    
-    let lensX = Math.min(Math.max(x - lensHalf, 0), maxX);
-    let lensY = Math.min(Math.max(y - lensHalf, 0), maxY);
+
+    const lensX = Math.min(Math.max(x - lensHalf, 0), maxX);
+    const lensY = Math.min(Math.max(y - lensHalf, 0), maxY);
 
     setLensPosition({ x: lensX, y: lensY });
 

@@ -55,7 +55,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Sidebar */}
       <aside className="w-64 bg-background border-r border-border text-foreground flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-border">
+        <div className="px-6 py-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl font-black tracking-tighter">TOKYO</span>
             <span className="text-accent text-2xl font-black">.</span>
@@ -63,11 +63,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <p className="text-xs font-bold text-muted-foreground mb-4 tracking-widest">
+        <nav className="flex-1 py-4">
+          <p className="text-xs font-bold text-muted-foreground mb-4 tracking-widest px-6">
             ADMIN PANEL
           </p>
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path ||
                 (item.path === '/admin' && location.pathname === '/admin');
@@ -75,7 +75,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
+                    className={`flex items-center gap-3 px-6 py-3 font-medium transition-colors ${isActive
                       ? 'bg-accent text-accent-foreground'
                       : 'hover:bg-accent/10'
                       }`}
@@ -90,13 +90,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </nav>
 
         {/* User Info */}
-        <div className="p-4 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-1">Shop Owner</p>
-          <p className="font-bold truncate mb-4">{user?.email}</p>
+        <div className="py-4 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-1 px-6">Shop Owner</p>
+          <p className="font-bold truncate mb-4 px-6">{user?.email}</p>
           <Link to="/">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-2 text-foreground hover:bg-accent/10 hover:text-foreground mb-2"
+              className="w-full justify-start gap-2 text-foreground hover:bg-accent/10 hover:text-foreground mb-1 px-6 rounded-none h-12"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Website
@@ -105,7 +105,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <Button
             variant="ghost"
             onClick={handleLogout}
-            className="w-full justify-start gap-2 text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+            className="w-full justify-start gap-2 text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors px-6 rounded-none h-12"
           >
             <LogOut className="h-4 w-4" />
             Logout

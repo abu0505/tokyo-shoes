@@ -40,9 +40,9 @@ const SizeGuideModal = ({ trigger }: SizeGuideModalProps) => {
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[70vh] overflow-hidden flex flex-col border-2 border-foreground p-0 bg-[#1a1a1a] text-white">
-        <DialogHeader className="p-6 pb-4 border-b border-white/10">
-          <DialogTitle className="text-2xl font-black tracking-tight text-white">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col border-2 border-foreground p-0 bg-white text-foreground">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200">
+          <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
             SIZE GUIDE
           </DialogTitle>
         </DialogHeader>
@@ -50,23 +50,23 @@ const SizeGuideModal = ({ trigger }: SizeGuideModalProps) => {
         <div className="flex-1 overflow-auto px-6 py-4 scrollbar-thin">
           <Table>
             <TableHeader>
-              <TableRow className="border-b border-white/20 hover:bg-transparent">
-                <TableHead className="text-gray-400 font-bold text-sm py-4">US</TableHead>
-                <TableHead className="text-gray-400 font-bold text-sm py-4">UK</TableHead>
-                <TableHead className="text-gray-400 font-bold text-sm py-4">EU</TableHead>
-                <TableHead className="text-gray-400 font-bold text-sm py-4">CM</TableHead>
+              <TableRow className="border-b border-gray-200 hover:bg-transparent">
+                <TableHead className="text-gray-500 font-bold text-sm py-4">US</TableHead>
+                <TableHead className="text-gray-500 font-bold text-sm py-4">UK</TableHead>
+                <TableHead className="text-gray-500 font-bold text-sm py-4">EU</TableHead>
+                <TableHead className="text-gray-500 font-bold text-sm py-4">CM</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sizeData.map((size, index) => (
                 <TableRow
                   key={index}
-                  className="border-b border-white/10 hover:bg-white/5"
+                  className="border-b border-gray-100 hover:bg-gray-50"
                 >
-                  <TableCell className="text-white font-semibold py-4">{size.us}</TableCell>
-                  <TableCell className="text-gray-300 py-4">{size.uk}</TableCell>
-                  <TableCell className="text-gray-300 py-4">{size.eu}</TableCell>
-                  <TableCell className="text-gray-300 py-4">{size.cm}</TableCell>
+                  <TableCell className="text-foreground font-semibold py-4">{size.us}</TableCell>
+                  <TableCell className="text-gray-600 py-4">{size.uk}</TableCell>
+                  <TableCell className="text-gray-600 py-4">{size.eu}</TableCell>
+                  <TableCell className="text-gray-600 py-4">{size.cm}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -74,11 +74,11 @@ const SizeGuideModal = ({ trigger }: SizeGuideModalProps) => {
         </div>
 
         {/* Tip Section */}
-        <div className="p-6 pt-4 border-t border-white/10">
+        <div className="p-6 pt-4 border-t border-gray-200">
           <div className="flex items-start gap-3 text-sm">
-            <Lightbulb className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-            <p className="text-gray-400">
-              <span className="text-yellow-400 font-medium">Tip:</span> If you're between sizes, we recommend sizing up for a more comfortable fit.
+            <Lightbulb className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-gray-500">
+              <span className="text-amber-600 font-medium">Tip:</span> If you're between sizes, we recommend sizing up for a more comfortable fit.
             </p>
           </div>
         </div>

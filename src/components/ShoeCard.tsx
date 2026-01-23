@@ -1,4 +1,4 @@
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Eye, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Shoe, isNewArrival } from '@/types/shoe';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,18 @@ interface ShoeCardProps {
   onQuickView?: (shoe: Shoe) => void;
   rating?: number;
   totalReviews?: number;
+  showRemoveButton?: boolean;
 }
 
-const ShoeCard = ({ shoe, onWishlistClick, isInWishlist = false, onQuickView, rating, totalReviews }: ShoeCardProps) => {
+const ShoeCard = ({
+  shoe,
+  onWishlistClick,
+  isInWishlist = false,
+  onQuickView,
+  rating,
+  totalReviews,
+  showRemoveButton = false
+}: ShoeCardProps) => {
   const navigate = useNavigate();
   const isNew = isNewArrival(shoe);
   const isSoldOut = shoe.status === 'sold_out';
@@ -57,13 +66,17 @@ const ShoeCard = ({ shoe, onWishlistClick, isInWishlist = false, onQuickView, ra
             size="icon"
             variant="secondary"
             onClick={() => onWishlistClick(shoe)}
-            disabled={isSoldOut}
+            disabled={isSoldOut && !showRemoveButton}
             className={`w-12 h-12 rounded-full border-2 border-foreground transition-all ${isInWishlist
               ? 'bg-accent text-accent-foreground hover:bg-accent/90'
               : 'bg-background hover:bg-accent hover:text-accent-foreground'
               }`}
           >
-            <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
+            {showRemoveButton ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
+            )}
           </Button>
 
           {/* Quick View Button */}

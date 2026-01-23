@@ -22,7 +22,7 @@ const Index = () => {
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
   // Fetch shoes from Supabase
-  const { data: shoes = [], isLoadingRaw } = useQuery({
+  const { data: shoes = [] } = useQuery({
     queryKey: ['catalog-shoes'],
     queryFn: async () => {
       const { data, error } = await supabase

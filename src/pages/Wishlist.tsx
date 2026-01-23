@@ -187,6 +187,7 @@ const Wishlist = () => {
                     onQuickView={handleQuickView}
                     rating={ratings[shoe.id]?.averageRating}
                     totalReviews={ratings[shoe.id]?.totalReviews}
+                    showRemoveButton={true}
                   />
                 </motion.div>
               ))}

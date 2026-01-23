@@ -29,8 +29,8 @@ const ProductImageZoomV2 = ({ src, alt, className = '' }: ProductImageZoomV2Prop
         const rect = container.getBoundingClientRect();
 
         // Get cursor position relative to the container
-        let x = e.clientX - rect.left;
-        let y = e.clientY - rect.top;
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
         // Center the lens on the cursor
         let lensX = x - LENS_SIZE / 2;

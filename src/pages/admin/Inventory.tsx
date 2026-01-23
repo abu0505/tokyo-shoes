@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, MoreVertical, Pencil, Trash2, CheckCircle, XCircle } from 'lucide-react';
@@ -104,23 +105,38 @@ const Inventory = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <h1 className="text-3xl font-black">Inventory Management</h1>
             <p className="text-muted-foreground mt-1">
               View, add, edit, and delete shoe inventory.
             </p>
-          </div>
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Shoe
-          </Button>
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Shoe
+            </Button>
+          </motion.div>
         </div>
 
         {/* Table */}
-        <div className="bg-card">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="bg-card"
+        >
           <Table>
             <TableHeader>
               <TableRow className="border-b-2 border-foreground hover:bg-transparent">
@@ -145,8 +161,15 @@ const Inventory = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                shoes.map((shoe) => (
-                  <TableRow key={shoe.id} className="border-b border-muted">
+                shoes.map((shoe, index) => (
+                  <motion.tr
+                    key={shoe.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: 0.1 + index * 0.05 }}
+                    className="border-b border-muted hover:bg-muted/50 transition-colors"
+                    style={{ display: 'table-row' }}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {shoe.image_url ? (
@@ -171,8 +194,8 @@ const Inventory = () => {
                         variant={shoe.status === 'in_stock' ? 'default' : 'secondary'}
                         className={
                           shoe.status === 'in_stock'
-                            ? 'bg-green-500/10 text-green-600 border-green-500/20'
-                            : 'bg-red-500/10 text-red-600 border-red-500/20'
+                            ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/10'
+                            : 'bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/10'
                         }
                       >
                         {shoe.status === 'in_stock' ? 'In Stock' : 'Sold Out'}
@@ -234,12 +257,12 @@ const Inventory = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))
               )}
             </TableBody>
           </Table>
-        </div>
+        </motion.div>
       </div>
 
       {/* Add/Edit Modal */}
