@@ -11,18 +11,21 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { user, isAdmin, isLoading, signOut } = useAuth();
+  const { user, isAdmin, isLoading, isAdminLoading, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Wait for both auth and admin check to complete
+  const stillLoading = isLoading || isAdminLoading;
+
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!stillLoading && !user) {
       navigate('/auth', { state: { from: location.pathname } });
-    } else if (!isLoading && user && !isAdmin) {
+    } else if (!stillLoading && user && !isAdmin) {
       toast.error('You do not have admin access');
       navigate('/');
     }
-  }, [user, isAdmin, isLoading, navigate, location.pathname]);
+  }, [user, isAdmin, stillLoading, navigate, location.pathname]);
 
   const handleLogout = async () => {
     await signOut();
@@ -35,7 +38,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: '/admin/inventory', icon: Package, label: 'Inventory' },
   ];
 
-  if (isLoading) {
+  if (stillLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-2xl font-bold">Loading...</div>
@@ -67,17 +70,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </p>
           <ul className="space-y-2">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path || 
+              const isActive = location.pathname === item.path ||
                 (item.path === '/admin' && location.pathname === '/admin');
               return (
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                      isActive
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
                         ? 'bg-accent text-foreground'
                         : 'hover:bg-background/10'
-                    }`}
+                      }`}
                   >
                     <item.icon className="h-5 w-5" />
                     {item.label}
