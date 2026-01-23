@@ -7,7 +7,7 @@ import ShoeCatalog from '@/components/ShoeCatalog';
 import Footer from '@/components/Footer';
 import BackToTopButton from '@/components/BackToTopButton';
 import { mockShoes, getUniqueBrands, getUniqueSizes, getPriceRange, Shoe } from '@/types/shoe';
-import { toast } from 'sonner';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 const Index = () => {
   const catalogRef = useRef<HTMLDivElement>(null);
@@ -22,8 +22,8 @@ const Index = () => {
   const { min: minPrice, max: maxPrice } = getPriceRange(mockShoes);
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice]);
 
-  // Wishlist state (will be persisted to DB in Phase 3)
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  // Wishlist from context (synced with database)
+  const { wishlistIds, toggleWishlist } = useWishlist();
 
   // Computed values
   const availableBrands = useMemo(() => getUniqueBrands(mockShoes), []);
@@ -106,14 +106,7 @@ const Index = () => {
     priceRange[1] !== maxPrice;
 
   const handleWishlistClick = (shoe: Shoe) => {
-    // In Phase 3, this will require authentication
-    if (wishlistIds.includes(shoe.id)) {
-      setWishlistIds(prev => prev.filter(id => id !== shoe.id));
-      toast.success(`Removed ${shoe.name} from wishlist`);
-    } else {
-      setWishlistIds(prev => [...prev, shoe.id]);
-      toast.success(`Added ${shoe.name} to wishlist`);
-    }
+    toggleWishlist(shoe.id, shoe.name);
   };
 
   const scrollToCatalog = () => {

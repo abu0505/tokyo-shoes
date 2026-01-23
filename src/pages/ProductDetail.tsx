@@ -14,36 +14,22 @@ import RelatedProducts from '@/components/RelatedProducts';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import OrderInquiryModal from '@/components/OrderInquiryModal';
 import SizeGuideModal from '@/components/SizeGuideModal';
+import ReviewForm from '@/components/reviews/ReviewForm';
+import ReviewList from '@/components/reviews/ReviewList';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useWishlist } from '@/contexts/WishlistContext';
 import { toast } from 'sonner';
-
-const WISHLIST_STORAGE_KEY = 'tokyo_wishlist';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [reviewRefreshTrigger, setReviewRefreshTrigger] = useState(0);
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const { wishlistIds, toggleWishlist, isInWishlist } = useWishlist();
 
   const shoe = mockShoes.find((s) => s.id === id);
-
-  // Load wishlist from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
-      if (stored) {
-        const ids = JSON.parse(stored);
-        setWishlistIds(ids);
-        if (shoe && ids.includes(shoe.id)) {
-          setIsWishlisted(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading wishlist:', error);
-    }
-  }, [shoe?.id]);
+  const isWishlisted = shoe ? isInWishlist(shoe.id) : false;
 
   // Scroll to top on mount
   useEffect(() => {
@@ -55,7 +41,7 @@ const ProductDetail = () => {
     if (shoe) {
       addToRecentlyViewed(shoe.id);
     }
-  }, [shoe?.id]);
+  }, [shoe?.id, addToRecentlyViewed]);
 
   if (!shoe) {
     return (
@@ -80,47 +66,12 @@ const ProductDetail = () => {
   const isNew = isNewArrival(shoe);
   const isSoldOut = shoe.status === 'sold_out';
 
-  const saveWishlistToStorage = (ids: string[]) => {
-    try {
-      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(ids));
-    } catch (error) {
-      console.error('Error saving wishlist:', error);
-    }
-  };
-
   const handleWishlistClick = () => {
-    const newIsWishlisted = !isWishlisted;
-    setIsWishlisted(newIsWishlisted);
-
-    let newIds: string[];
-    if (newIsWishlisted) {
-      newIds = [...wishlistIds.filter(id => id !== shoe.id), shoe.id];
-    } else {
-      newIds = wishlistIds.filter((wid) => wid !== shoe.id);
-    }
-    setWishlistIds(newIds);
-    saveWishlistToStorage(newIds);
-
-    toast.success(
-      newIsWishlisted
-        ? `Added ${shoe.name} to wishlist`
-        : `Removed ${shoe.name} from wishlist`
-    );
+    toggleWishlist(shoe.id, shoe.name);
   };
 
   const handleRelatedWishlistClick = (relatedShoe: Shoe) => {
-    const isInWishlist = wishlistIds.includes(relatedShoe.id);
-    let newIds: string[];
-
-    if (isInWishlist) {
-      newIds = wishlistIds.filter((wid) => wid !== relatedShoe.id);
-      toast.success(`Removed ${relatedShoe.name} from wishlist`);
-    } else {
-      newIds = [...wishlistIds, relatedShoe.id];
-      toast.success(`Added ${relatedShoe.name} to wishlist`);
-    }
-    setWishlistIds(newIds);
-    saveWishlistToStorage(newIds);
+    toggleWishlist(relatedShoe.id, relatedShoe.name);
   };
 
   const handleShare = async () => {
@@ -134,14 +85,6 @@ const ProductDetail = () => {
       await navigator.clipboard.writeText(window.location.href);
       toast.success('Link copied to clipboard!');
     }
-  };
-
-  const handleVisitStore = () => {
-    if (!selectedSize) {
-      toast.error('Please select a size first');
-      return;
-    }
-    toast.success(`Great choice! Visit our store to try ${shoe.name} in size ${selectedSize}`);
   };
 
   return (
@@ -328,6 +271,25 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <section className="mt-16 border-t-2 border-foreground/10 pt-12">
+          <h2 className="text-2xl font-black mb-8">CUSTOMER REVIEWS</h2>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <ReviewList 
+                shoeId={shoe.id} 
+                refreshTrigger={reviewRefreshTrigger}
+              />
+            </div>
+            <div>
+              <ReviewForm 
+                shoeId={shoe.id}
+                onReviewSubmitted={() => setReviewRefreshTrigger(prev => prev + 1)}
+              />
+            </div>
+          </div>
+        </section>
       </motion.main>
 
       {/* Related Products Section */}

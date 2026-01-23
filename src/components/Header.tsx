@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { History, User, LogOut, Heart } from 'lucide-react';
+import { User, LogOut, Heart, Eye } from 'lucide-react';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useAuth } from '@/hooks/useAuth';
+import { useWishlist } from '@/contexts/WishlistContext';
 import RecentlyViewedDropdown from './RecentlyViewedDropdown';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,17 +12,17 @@ import {
 } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
-interface HeaderProps {
-  wishlistCount?: number;
-}
-
-const Header = ({ wishlistCount = 0 }: HeaderProps) => {
+const Header = () => {
   const { recentlyViewed, clearRecentlyViewed, removeFromRecentlyViewed } = useRecentlyViewed();
   const { user, isAdmin, signOut } = useAuth();
+  const { wishlistIds } = useWishlist();
   const navigate = useNavigate();
+
+  const wishlistCount = wishlistIds.length;
 
   const handleLogout = async () => {
     await signOut();
+    clearRecentlyViewed();
     toast.success('Logged out successfully');
   };
 
@@ -36,7 +37,7 @@ const Header = ({ wishlistCount = 0 }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-background/80 backdrop-blur backdrop-saturate-150 border-b-2 border-foreground py-4 sticky top-0 z-50">
+    <header className="bg-background/80 backdrop-blur-md backdrop-saturate-150 border-b-2 border-foreground py-4 sticky top-0 z-50">
       <div className="container flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
@@ -97,7 +98,7 @@ const Header = ({ wishlistCount = 0 }: HeaderProps) => {
                   <Heart className="w-5 h-5" />
                   <span className="text-xs font-bold tracking-wide hidden sm:inline">WISHLIST</span>
                   {wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                       {wishlistCount}
                     </span>
                   )}
