@@ -250,6 +250,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_shoe_sizes: { Args: { sizes: number[] }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "customer"

@@ -186,7 +186,13 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
       const sizes = data.sizes
         .split(',')
         .map(s => parseInt(s.trim()))
-        .filter(s => !isNaN(s));
+        .filter(s => !isNaN(s) && s >= 1 && s <= 50); // Validate range (1-50 for US/EU sizes)
+
+      // Validate sizes array has valid entries
+      if (sizes.length === 0 && data.sizes.trim() !== '') {
+        toast.error('Invalid sizes. Please enter numbers between 1 and 50.');
+        return;
+      }
 
       const shoeData = {
         name: data.name,
