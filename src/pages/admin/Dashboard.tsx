@@ -42,21 +42,15 @@ const AdminDashboard = () => {
 
   const recentActivity = [...shoes]
     .sort((a, b) => {
-      const dateA = new Date(a.updated_at || a.created_at).getTime();
-      const dateB = new Date(b.updated_at || b.created_at).getTime();
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
       return dateB - dateA;
     })
     .slice(0, 10);
 
-  const getActivityType = (shoe: DbShoe) => {
-    const created = new Date(shoe.created_at).getTime();
-    const updated = new Date(shoe.updated_at || shoe.created_at).getTime();
-
-    // If updated within 1 minute of creation, treat as "Added"
-    if (updated - created < 60000) return 'New Arrival';
-
-    // Otherwise "Updated"
-    return 'Updated';
+  const getActivityType = (_shoe: DbShoe) => {
+    // Since we don't track updated_at, treat all as new arrivals
+    return 'New Arrival';
   };
 
   const statCards = [
@@ -202,7 +196,7 @@ const AdminDashboard = () => {
                   <div className="text-right">
                     <p className="font-bold text-accent">{formatPrice(shoe.price)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(new Date(shoe.updated_at || shoe.created_at))}
+                      {formatDate(new Date(shoe.created_at))}
                     </p>
                   </div>
 
