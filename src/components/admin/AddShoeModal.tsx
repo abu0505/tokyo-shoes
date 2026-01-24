@@ -93,9 +93,42 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
     }
   }, [shoe, open, reset]);
 
+  // Image validation constants
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  };
+
+  const validateImageFile = (file: File): string | null => {
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Image must be smaller than 5MB';
+    }
+
+    // Validate MIME type (not just extension)
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return 'Only JPG, PNG, and WebP images are allowed';
+    }
+
+    return null;
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        toast.error(validationError);
+        // Reset the input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -106,13 +139,24 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    // Re-validate before upload (defense in depth)
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return null;
+    }
+
+    // Use MIME type to determine extension (not filename)
+    const fileExt = MIME_TO_EXT[file.type] || 'jpg';
+    // Use crypto.randomUUID for secure, unpredictable filenames
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `shoes/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('shoe-images')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        contentType: file.type, // Explicitly set content type
+      });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -241,14 +285,14 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
                     Click or drag to upload
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    PNG, JPG, or WEBP
+                    PNG, JPG, or WEBP (max 5MB)
                   </p>
                 </>
               )}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,.webp"
                 onChange={handleImageChange}
                 className="hidden"
               />

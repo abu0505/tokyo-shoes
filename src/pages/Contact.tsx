@@ -259,7 +259,7 @@ const Contact = () => {
                             </div>
                             <div className="w-full flex-grow min-h-[400px]">
                                 <iframe
-                                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=Tokyo+Fashion,Juhapura,Ahmedabad,Gujarat,India&zoom=15"
+                                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&q=Tokyo+Fashion,Juhapura,Ahmedabad,Gujarat,India&zoom=15`}
                                     width="100%"
                                     height="100%"
                                     style={{ border: 0 }}
