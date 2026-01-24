@@ -141,7 +141,7 @@ const ProductDetail = () => {
       <Header />
 
       <motion.main
-        className="container py-8"
+        className="container py-6 md:py-8 px-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
@@ -150,13 +150,13 @@ const ProductDetail = () => {
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-6 -ml-4 font-bold hover:bg-transparent hover:text-accent group"
+          className="mb-4 md:mb-6 -ml-2 md:-ml-4 font-bold hover:bg-transparent hover:text-accent group text-sm md:text-base"
         >
-          <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
-          BACK TO CATALOG
+          <ArrowLeft className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:-translate-x-1" />
+          BACK
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
           {/* Image Section with Zoom */}
           <div className="relative">
             <div className="aspect-square border-2 border-foreground bg-secondary">
@@ -168,39 +168,39 @@ const ProductDetail = () => {
             </div>
 
             {/* Badges */}
-            <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
+            <div className="absolute top-3 md:top-6 left-3 md:left-6 flex flex-col gap-2 pointer-events-none">
               {isNew && (
-                <Badge className="bg-accent text-accent-foreground font-bold px-4 py-2 text-sm">
+                <Badge className="bg-accent text-accent-foreground font-bold px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm">
                   NEW ARRIVAL
                 </Badge>
               )}
               {isSoldOut && (
-                <Badge variant="secondary" className="bg-foreground text-background font-bold px-4 py-2 text-sm">
+                <Badge variant="secondary" className="bg-foreground text-background font-bold px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm">
                   SOLD OUT
                 </Badge>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div className="absolute top-6 right-6 flex flex-col gap-2">
+            <div className="absolute top-3 md:top-6 right-3 md:right-6 flex flex-col gap-2">
               <Button
                 size="icon"
                 variant="secondary"
                 onClick={handleWishlistClick}
-                className={`w-12 h-12 rounded-full border-2 border-foreground transition-all ${isWishlisted
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-foreground transition-all ${isWishlisted
                   ? 'bg-accent text-accent-foreground hover:bg-accent/90'
                   : 'bg-background hover:bg-accent hover:text-accent-foreground'
                   }`}
               >
-                <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isWishlisted ? 'fill-current' : ''}`} />
               </Button>
               <Button
                 size="icon"
                 variant="secondary"
                 onClick={handleShare}
-                className="w-12 h-12 rounded-full border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all"
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all"
               >
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
           </div>
@@ -208,8 +208,8 @@ const ProductDetail = () => {
           {/* Product Info */}
           <div className="flex flex-col">
             {/* Brand & Name & Rating */}
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground font-bold tracking-widest">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <p className="text-xs md:text-sm text-muted-foreground font-bold tracking-widest">
                 {shoe.brand.toUpperCase()}
               </p>
               {reviewStats.totalReviews > 0 && (
@@ -220,28 +220,28 @@ const ProductDetail = () => {
                 />
               )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4 md:mb-6 leading-tight">
               {shoe.name}
             </h1>
 
             {/* Size Selection */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-sm tracking-wide">SELECT SIZE (EU)</h3>
+            <div className="mb-6 md:mb-8">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <h3 className="font-bold text-xs md:text-sm tracking-wide">SELECT SIZE (EU)</h3>
                 <SizeGuideModal />
               </div>
               {selectedSize && (
-                <p className="text-sm text-accent font-medium mb-3">
+                <p className="text-xs md:text-sm text-accent font-medium mb-2 md:mb-3">
                   Size {selectedSize} selected
                 </p>
               )}
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-6 md:grid-cols-8 lg:flex lg:flex-wrap gap-2 md:gap-3">
                 {shoe.sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => !isSoldOut && setSelectedSize(size)}
                     disabled={isSoldOut}
-                    className={`w-10 h-10 border-2 font-bold text-lg transition-all ${selectedSize === size
+                    className={`w-full lg:w-10 h-9 md:h-10 border-2 font-bold text-sm md:text-lg transition-all ${selectedSize === size
                       ? 'border-accent bg-accent text-accent-foreground'
                       : 'border-foreground hover:border-accent hover:text-accent'
                       } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -253,49 +253,47 @@ const ProductDetail = () => {
             </div>
 
             {/* Price */}
-            <p className="text-4xl font-black mb-8">
+            <p className="text-3xl md:text-4xl font-black mb-6 md:mb-8">
               {formatPrice(shoe.price)}
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex gap-3 mb-8">
+            <div className="flex gap-3 mb-6 md:mb-8">
               <Button
                 onClick={handleWishlistClick}
                 disabled={isSoldOut}
-                className={`flex-1 h-14 text-lg font-bold transition-all ${isWishlisted
-                  ? 'bg-red-500 text-white hover:bg-red-600'
+                className={`flex-1 h-12 md:h-14 text-sm md:text-lg font-bold transition-all ${isWishlisted
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   : isSoldOut
                     ? 'bg-muted text-muted-foreground cursor-not-allowed'
                     : 'bg-foreground text-background hover:bg-accent hover:text-accent-foreground tokyo-shadow hover:-translate-y-1 hover:translate-x-1'
                   }`}
               >
-                <Heart className={`mr-2 h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
-                {isSoldOut ? 'SOLD OUT' : isWishlisted ? 'SAVED TO WISHLIST' : 'ADD TO WISHLIST'}
+                <Heart className={`mr-2 h-4 w-4 md:h-5 md:w-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                {isSoldOut ? 'SOLD OUT' : isWishlisted ? 'SAVED' : 'ADD TO WISHLIST'}
               </Button>
-
-
             </div>
 
             {/* Store Info */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="flex flex-col items-center p-4 bg-secondary border border-foreground/10">
-                <Truck className="h-6 w-6 mb-2 text-accent" />
-                <span className="text-xs font-medium text-center">IN-STORE PICKUP</span>
+            <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+              <div className="flex flex-col items-center p-3 md:p-4 bg-secondary border border-foreground/10">
+                <Truck className="h-5 w-5 md:h-6 md:w-6 mb-1.5 md:mb-2 text-accent" />
+                <span className="text-[10px] md:text-xs font-medium text-center">IN-STORE PICKUP</span>
               </div>
-              <div className="flex flex-col items-center p-4 bg-secondary border border-foreground/10">
-                <Shield className="h-6 w-6 mb-2 text-accent" />
-                <span className="text-xs font-medium text-center">AUTHENTIC GUARANTEED</span>
+              <div className="flex flex-col items-center p-3 md:p-4 bg-secondary border border-foreground/10">
+                <Shield className="h-5 w-5 md:h-6 md:w-6 mb-1.5 md:mb-2 text-accent" />
+                <span className="text-[10px] md:text-xs font-medium text-center">AUTHENTIC</span>
               </div>
-              <div className="flex flex-col items-center p-4 bg-secondary border border-foreground/10">
-                <RotateCcw className="h-6 w-6 mb-2 text-accent" />
-                <span className="text-xs font-medium text-center">EASY RETURNS</span>
+              <div className="flex flex-col items-center p-3 md:p-4 bg-secondary border border-foreground/10">
+                <RotateCcw className="h-5 w-5 md:h-6 md:w-6 mb-1.5 md:mb-2 text-accent" />
+                <span className="text-[10px] md:text-xs font-medium text-center">EASY RETURNS</span>
               </div>
             </div>
 
             {/* Product Details */}
-            <div className="border-t-2 border-foreground/10 pt-6">
-              <h3 className="font-bold text-sm tracking-wide mb-4">PRODUCT DETAILS</h3>
-              <ul className="space-y-2 text-muted-foreground">
+            <div className="border-t-2 border-foreground/10 pt-4 md:pt-6">
+              <h3 className="font-bold text-xs md:text-sm tracking-wide mb-3 md:mb-4">PRODUCT DETAILS</h3>
+              <ul className="space-y-2 text-muted-foreground text-sm">
                 <li className="flex justify-between">
                   <span>Brand</span>
                   <span className="font-medium text-foreground">{shoe.brand}</span>
@@ -320,16 +318,16 @@ const ProductDetail = () => {
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-16 border-t-2 border-foreground/10 pt-12">
-          <h2 className="text-2xl font-black mb-8">CUSTOMER REVIEWS</h2>
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+        <section className="mt-12 md:mt-16 border-t-2 border-foreground/10 pt-8 md:pt-12">
+          <h2 className="text-xl md:text-2xl font-black mb-6 md:mb-8">CUSTOMER REVIEWS</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="lg:col-span-2 order-2 lg:order-1">
               <ReviewList
                 shoeId={shoe.id}
                 refreshTrigger={reviewRefreshTrigger}
               />
             </div>
-            <div>
+            <div className="order-1 lg:order-2">
               <ReviewForm
                 shoeId={shoe.id}
                 onReviewSubmitted={() => {

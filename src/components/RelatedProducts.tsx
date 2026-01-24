@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Shoe } from '@/types/shoe';
 import ShoeCard from './ShoeCard';
+import ShoeCardMobile from './ShoeCardMobile';
 import { supabase } from '@/integrations/supabase/client';
 import { DbShoe } from '@/types/database';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RelatedProductsProps {
   currentShoe: Shoe;
@@ -11,6 +13,8 @@ interface RelatedProductsProps {
 }
 
 const RelatedProducts = ({ currentShoe, onWishlistClick, wishlistIds }: RelatedProductsProps) => {
+  const isMobile = useIsMobile();
+
   const { data: relatedShoes = [] } = useQuery({
     queryKey: ['related-shoes', currentShoe.id, currentShoe.brand],
     queryFn: async () => {
@@ -59,22 +63,38 @@ const RelatedProducts = ({ currentShoe, onWishlistClick, wishlistIds }: RelatedP
   if (relatedShoes.length === 0) return null;
 
   return (
-    <section className="py-16 border-t-2 border-foreground/10">
-      <div className="container">
-        <h2 className="text-3xl font-black mb-8 tracking-tight">
+    <section className="py-10 md:py-16 border-t-2 border-foreground/10">
+      <div className="container px-4">
+        <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 tracking-tight">
           YOU MAY ALSO LIKE
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {relatedShoes.map((shoe) => (
-            <ShoeCard
-              key={shoe.id}
-              shoe={shoe}
-              onWishlistClick={onWishlistClick}
-              isInWishlist={wishlistIds.includes(shoe.id)}
-            />
-          ))}
-        </div>
+        {isMobile ? (
+          // Mobile: Horizontal scrolling
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
+            {relatedShoes.map((shoe) => (
+              <div key={shoe.id} className="min-w-[260px] max-w-[260px] flex-shrink-0">
+                <ShoeCard
+                  shoe={shoe}
+                  onWishlistClick={onWishlistClick}
+                  isInWishlist={wishlistIds.includes(shoe.id)}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Desktop: Grid
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedShoes.map((shoe) => (
+              <ShoeCard
+                key={shoe.id}
+                shoe={shoe}
+                onWishlistClick={onWishlistClick}
+                isInWishlist={wishlistIds.includes(shoe.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
