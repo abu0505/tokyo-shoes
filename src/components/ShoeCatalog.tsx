@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { Shoe } from '@/types/shoe';
 import { DbShoe } from '@/types/database';
 import ShoeCard from './ShoeCard';
+import ShoeCardMobile from './ShoeCardMobile';
 import QuickViewModal from './QuickViewModal';
 import { useShoeRatings } from '@/hooks/useReviews';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ShoeCatalogProps {
   shoes: Shoe[];
@@ -13,6 +15,7 @@ interface ShoeCatalogProps {
 
 const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) => {
   const [quickViewShoe, setQuickViewShoe] = useState<DbShoe | null>(null);
+  const isMobile = useIsMobile();
 
   // Get shoe IDs for rating fetch
   const shoeIds = useMemo(() => shoes.map(s => s.id), [shoes]);
@@ -67,28 +70,42 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
       <section className="py-8 bg-background">
         <div className="container">
           {/* Results count */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6 md:mb-8">
             <p className="text-sm text-muted-foreground font-medium">
               SHOWING <span className="text-foreground font-bold">{shoes.length}</span> RESULTS
             </p>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Grid - Single column on mobile, 4 columns on desktop */}
+          <div className={isMobile 
+            ? "flex flex-col gap-3" 
+            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          }>
             {shoes.map((shoe, index) => (
               <div
                 key={shoe.id}
                 className="animate-fade-in h-full"
-                style={{ animationDelay: `${index * 0.05}s` }}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
-                <ShoeCard
-                  shoe={shoe}
-                  onWishlistClick={onWishlistClick}
-                  isInWishlist={wishlistIds.includes(shoe.id)}
-                  onQuickView={handleQuickView}
-                  rating={ratings[shoe.id]?.averageRating}
-                  totalReviews={ratings[shoe.id]?.totalReviews}
-                />
+                {isMobile ? (
+                  <ShoeCardMobile
+                    shoe={shoe}
+                    onWishlistClick={onWishlistClick}
+                    isInWishlist={wishlistIds.includes(shoe.id)}
+                    onQuickView={handleQuickView}
+                    rating={ratings[shoe.id]?.averageRating}
+                    totalReviews={ratings[shoe.id]?.totalReviews}
+                  />
+                ) : (
+                  <ShoeCard
+                    shoe={shoe}
+                    onWishlistClick={onWishlistClick}
+                    isInWishlist={wishlistIds.includes(shoe.id)}
+                    onQuickView={handleQuickView}
+                    rating={ratings[shoe.id]?.averageRating}
+                    totalReviews={ratings[shoe.id]?.totalReviews}
+                  />
+                )}
               </div>
             ))}
           </div>
