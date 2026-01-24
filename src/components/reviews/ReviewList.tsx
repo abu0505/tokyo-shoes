@@ -12,10 +12,7 @@ interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
-  user_id: string;
-  profiles?: {
-    username: string | null;
-  };
+  reviewer_username: string | null;
 }
 
 interface ReviewListProps {
@@ -26,6 +23,7 @@ interface ReviewListProps {
 const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [userReviewId, setUserReviewId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -33,9 +31,9 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
     try {
       setIsLoading(true);
 
-      // 1. Fetch reviews first (without join)
+      // Use the public view that masks user_id for privacy
       const { data: reviewsData, error: reviewsError } = await supabase
-        .from('reviews')
+        .from('reviews_public')
         .select('*')
         .eq('shoe_id', shoeId)
         .order('created_at', { ascending: false });
@@ -46,46 +44,26 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
         return;
       }
 
-      if (!reviewsData || reviewsData.length === 0) {
-        setReviews([]);
-        setIsLoading(false);
-        return;
+      setReviews(reviewsData || []);
+
+      // Fetch user's own review ID separately (RLS allows viewing own reviews)
+      if (user) {
+        const { data: userReview } = await supabase
+          .from('reviews')
+          .select('id')
+          .eq('shoe_id', shoeId)
+          .eq('user_id', user.id)
+          .single();
+        
+        setUserReviewId(userReview?.id || null);
       }
-
-      // 2. Fetch profiles for these reviews
-      const userIds = Array.from(new Set(reviewsData.map(r => r.user_id)));
-
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        // We can still show reviews even if profile fetch fails
-      }
-
-      // 3. Combine data manually
-      const profilesMap = new Map();
-      if (profilesData) {
-        profilesData.forEach(p => {
-          profilesMap.set(p.id, p);
-        });
-      }
-
-      const combinedReviews = reviewsData.map(review => ({
-        ...review,
-        profiles: profilesMap.get(review.user_id) || { username: 'Anonymous' }
-      }));
-
-      setReviews(combinedReviews);
     } catch (err) {
       console.error('Error in fetchReviews:', err);
       setReviews([]);
     } finally {
       setIsLoading(false);
     }
-  }, [shoeId]);
+  }, [shoeId, user]);
 
   useEffect(() => {
     fetchReviews();
@@ -96,11 +74,11 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
 
     setDeletingId(reviewId);
     try {
+      // Delete from the base reviews table (RLS ensures only own reviews)
       const { error } = await supabase
         .from('reviews')
         .delete()
-        .eq('id', reviewId)
-        .eq('user_id', user.id);
+        .eq('id', reviewId);
 
       if (error) throw error;
 
@@ -157,9 +135,9 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium">
-                      {review.profiles?.username || 'Anonymous'}
+                      {review.reviewer_username || 'Anonymous'}
                     </span>
-                    {review.user_id === user?.id && (
+                    {userReviewId === review.id && (
                       <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
                         You
                       </span>
@@ -169,9 +147,9 @@ const ReviewList = ({ shoeId, refreshTrigger }: ReviewListProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(review.created_at || new Date()), { addSuffix: true })}
                   </span>
-                  {review.user_id === user?.id && (
+                  {userReviewId === review.id && (
                     <Button
                       variant="ghost"
                       size="icon"

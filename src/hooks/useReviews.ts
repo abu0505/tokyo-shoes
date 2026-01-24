@@ -28,8 +28,10 @@ export const useReviews = (shoeId?: string) => {
 
     try {
       setIsLoading(true);
+      
+      // Fetch reviews from public view for privacy (no user_id exposed)
       const { data, error } = await supabase
-        .from('reviews')
+        .from('reviews_public')
         .select('*')
         .eq('shoe_id', shoeId)
         .order('created_at', { ascending: false });
@@ -39,7 +41,17 @@ export const useReviews = (shoeId?: string) => {
         return;
       }
 
-      setReviews(data || []);
+      // Map to include reviewer_username (already in view)
+      const mappedReviews = (data || []).map(r => ({
+        id: r.id,
+        shoe_id: r.shoe_id,
+        user_id: '', // Hidden for privacy
+        rating: r.rating,
+        comment: r.comment,
+        created_at: r.created_at
+      }));
+
+      setReviews(mappedReviews);
 
       // Calculate stats
       if (data && data.length > 0) {
@@ -52,10 +64,16 @@ export const useReviews = (shoeId?: string) => {
         setStats({ averageRating: 0, totalReviews: 0 });
       }
 
-      // Find user's review
+      // Find user's own review from the base table (RLS allows users to see their own)
       if (user) {
-        const myReview = data?.find(r => r.user_id === user.id) || null;
-        setUserReview(myReview);
+        const { data: myReviewData } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('shoe_id', shoeId)
+          .eq('user_id', user.id)
+          .single();
+        
+        setUserReview(myReviewData || null);
       }
     } catch (err) {
       console.error('Error fetching reviews:', err);
@@ -92,8 +110,9 @@ export const useShoeRatings = (shoeIds: string[]) => {
 
       try {
         setIsLoading(true);
+        // Use public view for ratings (no user_id needed)
         const { data, error } = await supabase
-          .from('reviews')
+          .from('reviews_public')
           .select('shoe_id, rating')
           .in('shoe_id', shoeIds);
 

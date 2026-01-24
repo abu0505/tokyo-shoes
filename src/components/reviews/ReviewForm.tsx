@@ -123,7 +123,11 @@ const ReviewForm = ({ shoeId, existingReview, onReviewSubmitted }: ReviewFormPro
           placeholder="Share your experience with this product..."
           className="resize-none"
           rows={4}
+          maxLength={1000}
         />
+        <span className="text-xs text-muted-foreground mt-1">
+          {comment.length}/1000 characters
+        </span>
       </div>
 
       <Button
