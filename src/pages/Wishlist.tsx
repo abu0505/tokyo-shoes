@@ -65,8 +65,7 @@ const Wishlist = () => {
       image_url: shoe.image,
       sizes: shoe.sizes,
       status: shoe.status,
-      created_at: shoe.createdAt.toISOString(),
-      updated_at: null
+      created_at: shoe.createdAt.toISOString()
     };
     setQuickViewShoe(dbShoe);
   };
