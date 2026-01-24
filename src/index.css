@@ -140,6 +140,7 @@
   }
 
   /* Sharp, urban typography */
+  /* Sharp, urban typography */
   h1,
   h2,
   h3,
@@ -147,6 +148,10 @@
   h5,
   h6 {
     @apply font-bold tracking-tight uppercase;
+  }
+
+  h1 {
+    @apply font-tokyo;
   }
 }
 

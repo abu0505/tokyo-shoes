@@ -65,10 +65,10 @@ const FilterBar = ({
     <div className="bg-secondary py-6 top-0 z-40">
       <div className="container">
         {/* Search Bar and Sort */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left Side - Title */}
           <div className="text-left w-full md:w-auto">
-            <h1 className="text-3xl font-black italic uppercase tracking-tighter">The Catalog</h1>
+            <h1 className="text-3xl font-black uppercase tracking-tighter">The Catalog</h1>
             <p className="text-sm text-muted-foreground font-medium">Browse our curated collection</p>
           </div>
 

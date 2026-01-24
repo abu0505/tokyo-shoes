@@ -28,7 +28,7 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
       image_url: shoe.image,
       sizes: shoe.sizes,
       status: shoe.status,
-      created_at: shoe.createdAt.toISOString(),
+      created_at: shoe.createdAt.toISOString()
     };
     setQuickViewShoe(dbShoe);
   };
@@ -64,7 +64,7 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
 
   return (
     <>
-      <section className="py-12 bg-background">
+      <section className="py-8 bg-background">
         <div className="container">
           {/* Results count */}
           <div className="flex items-center justify-between mb-8">

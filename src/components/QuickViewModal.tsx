@@ -130,7 +130,7 @@ const QuickViewModal = ({
                   disabled={isSoldOut}
                   className={`h-12 w-12 rounded-lg border-2 ${isInWishlist
                     ? 'border-red-500 bg-red-50 text-red-500 hover:bg-red-100'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-500 hover:bg-gray-100'
+                    : 'border-gray-300 text-gray-700 hover:border-red-500 hover:text-red-500 hover:bg-red-50'
                     }`}
                 >
                   <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />

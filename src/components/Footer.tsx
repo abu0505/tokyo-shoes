@@ -1,11 +1,15 @@
+import { Link } from 'react-router-dom';
+
 const Footer = () => {
   return (
-    <footer className="bg-primary text-primary-foreground py-16">
+    <footer className="bg-primary text-primary-foreground py-14">
       <div className="container">
         <div className="grid md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <h2 className="text-4xl font-black mb-4">TOKYO</h2>
+            <Link to="/" className="inline-block mb-4">
+              <img src="/logo.png" alt="Tokyo Shoes" className="h-16 w-auto brightness-0 invert" />
+            </Link>
             <p className="text-primary-foreground/60 max-w-md mb-6">
               Curated selection of authentic sneakers. From iconic classics to limited edition drops.
             </p>
@@ -13,7 +17,7 @@ const Footer = () => {
               © 2024 TOKYO. All rights reserved.
             </p>
           </div>
-          
+
           {/* Quick Links */}
           <div>
             <h3 className="text-sm font-bold tracking-wide mb-4 text-accent">QUICK LINKS</h3>
@@ -40,7 +44,7 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Support */}
           <div>
             <h3 className="text-sm font-bold tracking-wide mb-4 text-accent">SUPPORT</h3>

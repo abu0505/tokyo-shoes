@@ -41,8 +41,7 @@ const Header = () => {
       <div className="container flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-black tracking-tighter">TOKYO</span>
-          <span className="text-accent text-2xl font-black">•</span>
+          <img src="/logo.png" alt="Tokyo Shoes" className="h-[46px] w-auto" />
         </Link>
 
         {/* Right Side Actions */}
