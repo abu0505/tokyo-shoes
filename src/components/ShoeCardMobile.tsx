@@ -1,11 +1,13 @@
-import { Heart, Eye, X, Check, Trash, Ruler } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, Eye, X, Check, Trash, Ruler, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Shoe, isNewArrival } from '@/types/shoe';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
 import StarRating from '@/components/StarRating';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform, PanInfo, animate } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ShoeCardMobileProps {
   shoe: Shoe;
@@ -15,27 +17,63 @@ interface ShoeCardMobileProps {
   rating?: number;
   totalReviews?: number;
   showRemoveButton?: boolean;
+  mode?: 'catalog' | 'wishlist';
+  showSwipeHint?: boolean;
 }
 
-const ShoeCardMobile = ({
+const SWIPE_HINT_KEY = 'tokyo-shoes-swipe-hint-shown';
+
+const ShoeCardMobile = React.memo(({
   shoe,
   onWishlistClick,
   isInWishlist = false,
   onQuickView,
   rating,
   totalReviews,
-  showRemoveButton = false
+  showRemoveButton = false,
+  mode = 'catalog',
+  showSwipeHint = false
 }: ShoeCardMobileProps) => {
   const navigate = useNavigate();
   const isNew = isNewArrival(shoe);
   const isSoldOut = shoe.status === 'sold_out';
+  const [showHint, setShowHint] = useState(false);
 
-  // Swipe logic
+  // Check if this is the first card and hint hasn't been shown
+  useEffect(() => {
+    if (showSwipeHint) {
+      const hintShown = localStorage.getItem(SWIPE_HINT_KEY);
+      if (!hintShown) {
+        setShowHint(true);
+        // Auto-hide after 4 seconds
+        const timer = setTimeout(() => {
+          setShowHint(false);
+          localStorage.setItem(SWIPE_HINT_KEY, 'true');
+        }, 4000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [showSwipeHint]);
+
+  const dismissHint = () => {
+    setShowHint(false);
+    localStorage.setItem(SWIPE_HINT_KEY, 'true');
+  };
+
+  // Swipe logic - much lighter feel
   const x = useMotionValue(0);
-  const opacityRight = useTransform(x, [50, 100], [0, 1]);
-  const opacityLeft = useTransform(x, [-50, -100], [0, 1]);
-  const bgLeft = useTransform(x, [-100, 0], ["rgb(239 68 68)", "rgb(255 255 255)"]); // Red to White
-  const bgRight = useTransform(x, [0, 100], ["rgb(255 255 255)", "rgb(34 197 94)"]); // White to Green
+  const SWIPE_THRESHOLD = 60; // Reduced from 100
+  
+  // Opacity transforms - start showing feedback earlier
+  const opacityRight = useTransform(x, [30, SWIPE_THRESHOLD], [0, 1]);
+  const opacityLeft = useTransform(x, [-30, -SWIPE_THRESHOLD], [0, 1]);
+  
+  // Scale effect for visual feedback
+  const scale = useTransform(
+    x,
+    [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+    [0.98, 1, 0.98]
+  );
 
   const handleCardClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -45,40 +83,119 @@ const ShoeCardMobile = ({
   };
 
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) {
-      // Swiped Right -> Add to Wishlist
-      if (!isInWishlist && !isSoldOut) {
-        onWishlistClick(shoe);
-      }
-    } else if (info.offset.x < -100) {
-      // Swiped Left -> Remove from Wishlist
-      if (isInWishlist || showRemoveButton) {
+    const swipeDistance = Math.abs(info.offset.x);
+    
+    if (swipeDistance > SWIPE_THRESHOLD) {
+      if (mode === 'catalog') {
+        // In catalog: ANY direction adds to wishlist
+        if (isSoldOut) {
+          toast.error('This item is sold out');
+        } else if (isInWishlist) {
+          toast.info(`${shoe.name} is already in your wishlist`);
+        } else {
+          onWishlistClick(shoe);
+        }
+      } else if (mode === 'wishlist') {
+        // In wishlist: ANY direction removes from wishlist
         onWishlistClick(shoe);
       }
     }
+    
+    // Animate back to center with spring
+    animate(x, 0, { type: 'spring', stiffness: 400, damping: 30 });
+  };
+
+  // Determine indicator content based on mode
+  const getLeftIndicator = () => {
+    if (mode === 'wishlist') {
+      return (
+        <motion.div style={{ opacity: opacityLeft }} className="flex items-center gap-2 text-red-600 font-bold bg-red-100/90 px-3 py-2 rounded-full z-10">
+          <Trash className="w-5 h-5" />
+          <span className="text-sm">Remove</span>
+        </motion.div>
+      );
+    }
+    // Catalog mode - show add on left too
+    return (
+      <motion.div style={{ opacity: opacityLeft }} className="flex items-center gap-2 text-green-600 font-bold bg-green-100/90 px-3 py-2 rounded-full z-10">
+        <Check className="w-5 h-5" />
+        <span className="text-sm">Add</span>
+      </motion.div>
+    );
+  };
+
+  const getRightIndicator = () => {
+    if (mode === 'wishlist') {
+      return (
+        <motion.div style={{ opacity: opacityRight }} className="flex items-center gap-2 text-red-600 font-bold bg-red-100/90 px-3 py-2 rounded-full z-10">
+          <span className="text-sm">Remove</span>
+          <Trash className="w-5 h-5" />
+        </motion.div>
+      );
+    }
+    // Catalog mode
+    return (
+      <motion.div style={{ opacity: opacityRight }} className="flex items-center gap-2 text-green-600 font-bold bg-green-100/90 px-3 py-2 rounded-full z-10">
+        <span className="text-sm">Add</span>
+        <Check className="w-5 h-5" />
+      </motion.div>
+    );
   };
 
   return (
     <div className="relative overflow-hidden rounded-lg">
+      {/* Swipe Hint Overlay */}
+      {showHint && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 z-30 bg-black/70 flex items-center justify-center rounded-lg"
+          onClick={dismissHint}
+        >
+          <div className="flex flex-col items-center gap-3 px-4 text-center">
+            <div className="flex items-center gap-4">
+              <motion.div
+                animate={{ x: [-10, 10, -10] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              >
+                <ChevronLeft className="w-8 h-8 text-white" />
+              </motion.div>
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <Heart className="w-6 h-6 text-accent" />
+              </div>
+              <motion.div
+                animate={{ x: [10, -10, 10] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              >
+                <ChevronRight className="w-8 h-8 text-white" />
+              </motion.div>
+            </div>
+            <p className="text-white font-bold text-sm">
+              {mode === 'catalog' 
+                ? 'Swipe to add to wishlist' 
+                : 'Swipe to remove from wishlist'}
+            </p>
+            <p className="text-white/60 text-xs">Tap to dismiss</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Background Indicators */}
-      <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
-        <motion.div style={{ opacity: opacityRight }} className="flex items-center gap-2 text-green-600 font-bold bg-green-100/80 p-2 rounded-full z-10">
-          <Check className="w-6 h-6" />
-          <span>Add</span>
-        </motion.div>
-        <motion.div style={{ opacity: opacityLeft }} className="flex items-center gap-2 text-red-600 font-bold bg-red-100/80 p-2 rounded-full z-10">
-          <span>Remove</span>
-          <Trash className="w-6 h-6" />
-        </motion.div>
+      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+        {getRightIndicator()}
+        {getLeftIndicator()}
       </div>
 
       <motion.div
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.7}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
         onClick={handleCardClick}
-        style={{ x }}
-        className={`group relative bg-secondary/30 border-[0.5px] border-gray-300 overflow-hidden transition-all cursor-pointer active:bg-secondary flex min-h-[140px] items-center z-20 ${isSoldOut ? 'opacity-60' : ''}`}
+        style={{ x, scale }}
+        whileTap={{ cursor: 'grabbing' }}
+        className={`group relative bg-secondary/30 border-[0.5px] border-border overflow-hidden transition-colors cursor-grab active:cursor-grabbing active:bg-secondary flex min-h-[140px] items-center z-20 rounded-lg ${isSoldOut ? 'opacity-60' : ''}`}
       >
         {/* Image Container - Left Side */}
         <div className="relative w-[140px] h-[140px] flex-shrink-0 overflow-hidden bg-secondary">
@@ -87,6 +204,8 @@ const ShoeCardMobile = ({
             alt={shoe.name}
             className="w-full h-full object-cover"
             draggable={false}
+            loading="lazy"
+            decoding="async"
           />
 
           {/* NEW Badge */}
@@ -198,6 +317,8 @@ const ShoeCardMobile = ({
       </motion.div>
     </div>
   );
-};
+});
+
+ShoeCardMobile.displayName = 'ShoeCardMobile';
 
 export default ShoeCardMobile;

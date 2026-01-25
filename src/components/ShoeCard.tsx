@@ -1,3 +1,4 @@
+import React from 'react';
 import { Heart, Eye, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Shoe, isNewArrival } from '@/types/shoe';
@@ -16,7 +17,7 @@ interface ShoeCardProps {
   showRemoveButton?: boolean;
 }
 
-const ShoeCard = ({
+const ShoeCard = React.memo(({
   shoe,
   onWishlistClick,
   isInWishlist = false,
@@ -47,6 +48,8 @@ const ShoeCard = ({
           src={shoe.image}
           alt={shoe.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          loading="lazy"
+          decoding="async"
         />
 
         {/* Badges */}
@@ -152,6 +155,8 @@ const ShoeCard = ({
       </div>
     </div>
   );
-};
+});
+
+ShoeCard.displayName = 'ShoeCard';
 
 export default ShoeCard;

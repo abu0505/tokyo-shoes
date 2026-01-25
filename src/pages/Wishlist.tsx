@@ -23,13 +23,16 @@ const Wishlist = () => {
   const { wishlistIds, removeFromWishlist } = useWishlist();
   const [quickViewShoe, setQuickViewShoe] = useState<DbShoe | null>(null);
   const isMobile = useIsMobile();
+  
+  // Local state to prevent flicker on removal
+  const [displayedShoes, setDisplayedShoes] = useState<Shoe[]>([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   const { data: wishlistShoes = [], isLoading } = useQuery({
-    queryKey: ['wishlist-shoes', wishlistIds],
+    queryKey: ['wishlist-shoes', wishlistIds.slice().sort().join(',')], // Stable key
     queryFn: async () => {
       if (wishlistIds.length === 0) return [];
 
@@ -52,13 +55,25 @@ const Wishlist = () => {
       })) as Shoe[];
     },
     enabled: wishlistIds.length > 0,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes cache
   });
 
+  // Sync displayed shoes when fetch completes or wishlist becomes empty
+  useEffect(() => {
+    if (wishlistShoes.length > 0 || wishlistIds.length === 0) {
+      setDisplayedShoes(wishlistShoes);
+    }
+  }, [wishlistShoes, wishlistIds.length]);
+
   // Get shoe IDs for rating fetch
-  const shoeIds = useMemo(() => wishlistShoes.map(s => s.id), [wishlistShoes]);
+  const shoeIds = useMemo(() => displayedShoes.map(s => s.id), [displayedShoes]);
   const { ratings } = useShoeRatings(shoeIds);
 
   const handleRemoveFromWishlist = (shoe: Shoe) => {
+    // Immediately remove from displayed list (no flicker)
+    setDisplayedShoes(prev => prev.filter(s => s.id !== shoe.id));
+    // Then sync with database
     removeFromWishlist(shoe.id, shoe.name);
   };
 
@@ -113,7 +128,7 @@ const Wishlist = () => {
               <Heart className="w-5 h-5 md:w-6 md:h-6 text-destructive fill-destructive" />
             </div>
             <div>
-              <p className="text-xl md:text-2xl font-bold">{wishlistShoes.length}</p>
+              <p className="text-xl md:text-2xl font-bold">{displayedShoes.length}</p>
               <p className="text-xs md:text-sm text-muted-foreground leading-tight">Saved Shoes</p>
             </div>
           </div>
@@ -157,7 +172,7 @@ const Wishlist = () => {
         )}
 
         {/* Wishlist Items */}
-        {wishlistShoes.length === 0 ? (
+        {displayedShoes.length === 0 ? (
           <div className="text-center py-16 md:py-20">
             <Heart className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-muted-foreground" />
             <h2 className="text-xl md:text-2xl font-bold mb-2">No saved shoes yet</h2>
@@ -174,16 +189,18 @@ const Wishlist = () => {
         ) : (
           <div className={isMobile
             ? "flex flex-col gap-1.5"
-            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
           }>
-            <AnimatePresence>
-              {wishlistShoes.map((shoe, index) => (
+            <AnimatePresence mode="popLayout">
+              {displayedShoes.map((shoe, index) => (
                 <motion.div
                   key={shoe.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.05 }}
+                  layout
+                  layoutId={shoe.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                  transition={{ delay: index * 0.03, type: 'spring', stiffness: 500, damping: 30 }}
                   className="h-full"
                 >
                   {isMobile ? (
@@ -195,6 +212,8 @@ const Wishlist = () => {
                       rating={ratings[shoe.id]?.averageRating}
                       totalReviews={ratings[shoe.id]?.totalReviews}
                       showRemoveButton={true}
+                      mode="wishlist"
+                      showSwipeHint={index === 0}
                     />
                   ) : (
                     <ShoeCard

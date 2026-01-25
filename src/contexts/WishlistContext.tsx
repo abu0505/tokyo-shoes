@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -133,15 +133,18 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
     return wishlistIds.includes(shoeId);
   }, [wishlistIds]);
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    wishlistIds,
+    isLoading,
+    addToWishlist,
+    removeFromWishlist,
+    toggleWishlist,
+    isInWishlist
+  }), [wishlistIds, isLoading, addToWishlist, removeFromWishlist, toggleWishlist, isInWishlist]);
+
   return (
-    <WishlistContext.Provider value={{
-      wishlistIds,
-      isLoading,
-      addToWishlist,
-      removeFromWishlist,
-      toggleWishlist,
-      isInWishlist
-    }}>
+    <WishlistContext.Provider value={contextValue}>
       {children}
     </WishlistContext.Provider>
   );

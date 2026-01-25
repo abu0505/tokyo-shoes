@@ -76,16 +76,16 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
             </p>
           </div>
 
-          {/* Grid - Single column on mobile, 4 columns on desktop */}
+          {/* Grid - Single column on mobile, 3 on tablet, 4 on desktop */}
           <div className={isMobile
             ? "flex flex-col gap-1.5"
-            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
           }>
             {shoes.map((shoe, index) => (
               <div
                 key={shoe.id}
                 className="animate-fade-in h-full"
-                style={{ animationDelay: `${index * 0.03}s` }}
+                style={{ animationDelay: `${index * 0.015}s` }}
               >
                 {isMobile ? (
                   <ShoeCardMobile
@@ -95,6 +95,8 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
                     onQuickView={handleQuickView}
                     rating={ratings[shoe.id]?.averageRating}
                     totalReviews={ratings[shoe.id]?.totalReviews}
+                    mode="catalog"
+                    showSwipeHint={index === 0}
                   />
                 ) : (
                   <ShoeCard
