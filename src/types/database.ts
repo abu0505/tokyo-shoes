@@ -19,6 +19,7 @@ export type Database = {
           sizes: number[]
           status: 'in_stock' | 'sold_out'
           created_at: string
+          updated_at: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +30,7 @@ export type Database = {
           sizes?: number[]
           status?: 'in_stock' | 'sold_out'
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -39,6 +41,7 @@ export type Database = {
           sizes?: number[]
           status?: 'in_stock' | 'sold_out'
           created_at?: string
+          updated_at?: string
         }
       }
       profiles: {

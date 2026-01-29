@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     ShoppingBag,
@@ -13,6 +14,9 @@ import {
     MoreVertical,
     ChevronLeft,
     ChevronRight,
+    Eye,
+    ClipboardList,
+    IndianRupee,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -44,12 +48,14 @@ import {
     OrderWithItemCount,
 } from '@/hooks/useAdminOrders';
 import { formatPrice, formatDate } from '@/lib/format';
+import { getRandomColor } from '@/lib/colors';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
+import TextLoader from '@/components/TextLoader';
 
 const PAGE_SIZE = 10;
 
@@ -81,6 +87,7 @@ const getInitials = (firstName: string, lastName: string) => {
 };
 
 const AdminOrders = () => {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
@@ -168,7 +175,7 @@ const AdminOrders = () => {
         {
             title: 'TOTAL ORDERS',
             value: stats?.totalOrders || 0,
-            icon: ShoppingBag,
+            icon: ClipboardList,
             color: 'text-foreground',
             bgColor: 'bg-accent/10',
         },
@@ -182,7 +189,7 @@ const AdminOrders = () => {
         {
             title: 'REVENUE',
             value: formatPrice(stats?.totalRevenue || 0),
-            icon: DollarSign,
+            icon: IndianRupee,
             color: 'text-green-600',
             bgColor: 'bg-green-500/10',
             isLarge: true,
@@ -209,6 +216,48 @@ const AdminOrders = () => {
                             <Download className="h-5 w-5" />
                             Export CSV
                         </button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-black text-white text-sm font-bold transition-all hover:bg-red-600">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>
+                                        {dateRange?.from ? (
+                                            dateRange.to ? (
+                                                <>
+                                                    {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}
+                                                </>
+                                            ) : (
+                                                format(dateRange.from, "LLL dd")
+                                            )
+                                        ) : (
+                                            "Date Range"
+                                        )}
+                                    </span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <CalendarPicker
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={handleDateRangeChange}
+                                    numberOfMonths={1}
+                                />
+                                {dateRange && (
+                                    <div className="p-3 border-t border-border flex justify-end">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-xs font-bold uppercase tracking-tight"
+                                            onClick={() => handleDateRangeChange(undefined)}
+                                        >
+                                            Clear Range
+                                        </Button>
+                                    </div>
+                                )}
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </header>
             }
@@ -231,7 +280,7 @@ const AdminOrders = () => {
                                         {card.title}
                                     </p>
                                     <p className={`text-3xl font-black mt-1 ${card.isLarge ? 'text-black' : ''}`}>
-                                        {statsLoading ? '...' : card.value}
+                                        {statsLoading ? <TextLoader text="" className="inline-flex min-w-0" showDots={true} /> : card.value}
                                     </p>
                                 </div>
                                 <div className={`p-3 rounded-full ${card.bgColor}`}>
@@ -243,9 +292,9 @@ const AdminOrders = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white border border-border p-2 rounded-2xl shadow-sm flex flex-row items-center gap-2 overflow-x-auto no-scrollbar">
+                <div className="bg-white border border-border p-2 rounded-2xl shadow-sm flex flex-row items-center justify-between gap-2 overflow-x-auto no-scrollbar">
                     {/* Search */}
-                    <div className="relative w-54 shrink-0">
+                    <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search by Order"
@@ -255,52 +304,8 @@ const AdminOrders = () => {
                         />
                     </div>
 
-                    {/* Date Range Picker */}
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <button className="hidden md:flex items-center gap-2 px-3 h-10 border border-border bg-secondary/50 rounded-xl text-sm font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all box-border">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                    {dateRange?.from ? (
-                                        dateRange.to ? (
-                                            <>
-                                                {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd")}
-                                            </>
-                                        ) : (
-                                            format(dateRange.from, "LLL dd")
-                                        )
-                                    ) : (
-                                        "Date Range"
-                                    )}
-                                </span>
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarPicker
-                                initialFocus
-                                mode="range"
-                                defaultMonth={dateRange?.from}
-                                selected={dateRange}
-                                onSelect={handleDateRangeChange}
-                                numberOfMonths={1}
-                            />
-                            {dateRange && (
-                                <div className="p-3 border-t border-border flex justify-end">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs font-bold uppercase tracking-tight"
-                                        onClick={() => handleDateRangeChange(undefined)}
-                                    >
-                                        Clear Range
-                                    </Button>
-                                </div>
-                            )}
-                        </PopoverContent>
-                    </Popover>
-
                     {/* Status Filters */}
-                    <div className="flex items-center gap-2 overflow-x-auto w-auto no-scrollbar">
+                    <div className="flex items-center gap-2">
                         {STATUS_OPTIONS.map((option) => (
                             <button
                                 key={option.value}
@@ -407,7 +412,7 @@ const AdminOrders = () => {
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarFallback className="bg-accent/10 text-accent font-bold">
+                                                    <AvatarFallback className={`font-bold ${getRandomColor(order.email)}`}>
                                                         {getInitials(order.first_name, order.last_name)}
                                                     </AvatarFallback>
                                                 </Avatar>
@@ -460,6 +465,14 @@ const AdminOrders = () => {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
+                                                    <DropdownMenuItem
+                                                        onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                                        className="font-medium"
+                                                    >
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        View Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuLabel>Update Status</DropdownMenuLabel>
                                                     <DropdownMenuSeparator />
                                                     {(['pending', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map(

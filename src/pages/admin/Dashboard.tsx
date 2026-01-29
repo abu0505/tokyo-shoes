@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Package, CheckCircle, XCircle, IndianRupee, Clock, Plus } from 'lucide-react';
+import { Package, CheckCircle, XCircle, IndianRupee, Clock, Plus, ShoppingBag, Archive } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { DbShoe } from '@/types/database';
@@ -41,16 +41,28 @@ const AdminDashboard = () => {
        We can infer "Newly Added" vs "Updated".
   */
 
+  /*
+     Sort items by updated_at (or created_at if updated_at is null) descending.
+  */
+
   const recentActivity = [...shoes]
     .sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = new Date(a.updated_at || a.created_at).getTime();
+      const dateB = new Date(b.updated_at || b.created_at).getTime();
       return dateB - dateA;
     })
     .slice(0, 10);
 
-  const getActivityType = (_shoe: DbShoe) => {
-    // Since we don't track updated_at, treat all as new arrivals
+  const getActivityType = (shoe: DbShoe) => {
+    // If updated_at exists and is different from created_at (by more than 60s), it's an update
+    if (shoe.updated_at) {
+      const created = new Date(shoe.created_at).getTime();
+      const updated = new Date(shoe.updated_at).getTime();
+      if (updated - created > 60000) { // 1 minute buffer
+        if (shoe.status === 'sold_out') return 'Marked Sold Out';
+        if (shoe.status === 'in_stock') return 'Updated';
+      }
+    }
     return 'New Arrival';
   };
 
@@ -59,7 +71,7 @@ const AdminDashboard = () => {
       title: 'Total Inventory',
       value: totalInventory,
       description: 'Total number of unique shoe models.',
-      icon: Package,
+      icon: ShoppingBag,
       color: 'text-foreground',
     },
     {
@@ -73,7 +85,7 @@ const AdminDashboard = () => {
       title: 'Sold Out',
       value: soldOutCount,
       description: 'Shoes that are currently out of stock.',
-      icon: XCircle,
+      icon: Archive,
       color: 'text-red-600',
     },
     {
@@ -81,7 +93,7 @@ const AdminDashboard = () => {
       value: formatPrice(totalValue),
       description: 'Estimated total value of current inventory.',
       icon: IndianRupee,
-      color: 'text-accent',
+      color: 'text-foreground',
       isLarge: true,
     },
   ];
@@ -124,8 +136,8 @@ const AdminDashboard = () => {
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
 
-              <p className={`text-4xl font-black ${card.isLarge ? 'text-accent' : 'text-foreground'}`}>
-                {isLoading ? '...' : card.value}
+              <p className={`text-4xl font-black ${card.isLarge ? 'text-black' : 'text-foreground'}`}>
+                {isLoading ? <TextLoader text="" className="inline-flex min-w-0" showDots={true} /> : card.value}
               </p>
 
               <p className="text-xs text-muted-foreground mt-2">
@@ -197,9 +209,9 @@ const AdminDashboard = () => {
 
                   {/* Price */}
                   <div className="text-right">
-                    <p className="font-bold text-accent">{formatPrice(shoe.price)}</p>
+                    <p className="font-bold text-foreground">{formatPrice(shoe.price)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(new Date(shoe.created_at))}
+                      {formatDate(new Date(shoe.updated_at || shoe.created_at))}
                     </p>
                   </div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
@@ -19,6 +19,39 @@ const ReviewDialog = ({ isOpen, onClose, shoeId, userId, onReviewSubmitted }: Re
     const [hoverRating, setHoverRating] = useState(0);
     const [reviewText, setReviewText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [canReview, setCanReview] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            if (!userId || !shoeId) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select(`
+                        id,
+                        status,
+                        order_items!inner(shoe_id)
+                    `)
+                    .eq('user_id', userId)
+                    .eq('status', 'Delivered')
+                    .eq('order_items.shoe_id', shoeId)
+                    .limit(1);
+
+                if (error) {
+                    console.error('Error checking review eligibility:', error);
+                    setCanReview(false);
+                } else {
+                    setCanReview(data && data.length > 0);
+                }
+            } catch (error) {
+                console.error('Error checking eligibility:', error);
+                setCanReview(false);
+            }
+        };
+
+        checkEligibility();
+    }, [userId, shoeId]);
 
     const handleSubmit = async () => {
         if (rating === 0) {
@@ -58,6 +91,24 @@ const ReviewDialog = ({ isOpen, onClose, shoeId, userId, onReviewSubmitted }: Re
             setReviewText("");
         }, 300);
     };
+
+    if (canReview === false) {
+        return (
+            <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+                <DialogContent className="sm:max-w-md bg-white text-foreground p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold uppercase tracking-tight text-destructive">Unable to Review</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-muted-foreground">
+                        You can only review this product after your order has been delivered.
+                    </p>
+                    <Button onClick={handleClose} variant="outline" className="mt-4 w-full border-black">
+                        Close
+                    </Button>
+                </DialogContent>
+            </Dialog>
+        );
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>

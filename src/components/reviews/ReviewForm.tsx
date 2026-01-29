@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import StarRating from './StarRating';
@@ -22,6 +22,58 @@ const ReviewForm = ({ shoeId, existingReview, onReviewSubmitted }: ReviewFormPro
   const [rating, setRating] = useState(existingReview?.rating || 0);
   const [comment, setComment] = useState(existingReview?.comment || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canReview, setCanReview] = useState<boolean | null>(null); // null = loading
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!user) {
+        setCanReview(false);
+        return;
+      }
+
+      // If already reviewed (and passed as prop), they can edit
+      if (existingReview) {
+        setCanReview(true);
+        return;
+      }
+
+      setCheckingEligibility(true);
+      try {
+        // Check if user has a delivered order for this shoe
+        // We need to join orders and order_items
+        // Assuming relationship is set up, or we can do it manually if needed
+        // But for now, let's try a direct query approach ensuring we respect RLS
+
+        // Since Supabase structure usually allows querying through foreign keys:
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            status,
+            order_items!inner(shoe_id)
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'Delivered')
+          .eq('order_items.shoe_id', shoeId)
+          .limit(1);
+
+        if (error) {
+          console.error('Error checking review eligibility:', error);
+          setCanReview(false);
+        } else {
+          setCanReview(data && data.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking eligibility:', error);
+        setCanReview(false);
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+
+    checkEligibility();
+  }, [user, shoeId, existingReview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +147,25 @@ const ReviewForm = ({ shoeId, existingReview, onReviewSubmitted }: ReviewFormPro
         >
           Login to Review
         </Button>
+      </div>
+    );
+  }
+
+  if (checkingEligibility) {
+    return (
+      <div className="bg-secondary/50 border border-foreground/10 rounded-lg p-6 text-center flex items-center justify-center h-[200px]">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (canReview === false && !existingReview) {
+    return (
+      <div className="bg-secondary/50 border border-foreground/10 rounded-lg p-6 text-center">
+        <p className="font-bold mb-2">Verified Purchasers Only</p>
+        <p className="text-muted-foreground text-sm">
+          You can only review this product after you have purchased it and it has been delivered.
+        </p>
       </div>
     );
   }

@@ -100,7 +100,6 @@ const OrderHistory = () => {
                 // Transform the data to match our interface
                 const transformedOrders = (data || []).map((order: any) => ({
                     ...order,
-                    status: "delivered", // For testing as requested
                     order_items: order.order_items.map((item: any) => ({
                         ...item,
                         shoe: item.shoes,

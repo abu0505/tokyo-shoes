@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import TextLoader from '@/components/TextLoader';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -45,7 +46,7 @@ const AdminLayout = ({ children, header }: AdminLayoutProps) => {
   if (stillLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-2xl font-bold">Loading...</div>
+        <TextLoader text="Loading" />
       </div>
     );
   }

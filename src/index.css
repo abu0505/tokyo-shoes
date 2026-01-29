@@ -193,27 +193,46 @@
   /* Shimmer Text Animation */
   .animate-text-shimmer {
     --shimmer-c1: hsl(var(--foreground));
-    --shimmer-c2: hsl(var(--muted-foreground));
+    --shimmer-c2: #888888;
+    /* More distinct color for the shimmer strike */
 
     background: linear-gradient(90deg,
         var(--shimmer-c1) 0%,
+        var(--shimmer-c1) 40%,
         var(--shimmer-c2) 50%,
+        var(--shimmer-c1) 60%,
         var(--shimmer-c1) 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: text-shimmer 2.5s linear infinite;
+    animation: text-shimmer 2.5s ease-in-out infinite;
   }
 }
 
 @keyframes text-shimmer {
   0% {
-    background-position: 200% 0;
+    background-position: 150% 0;
   }
 
   100% {
-    background-position: -200% 0;
+    background-position: -150% 0;
+  }
+}
+
+@keyframes wave-jump {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  15% {
+    transform: translateY(-3px);
+  }
+
+  30% {
+    transform: translateY(0);
   }
 }
 

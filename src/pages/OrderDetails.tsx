@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TextLoader from "@/components/TextLoader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Truck, Package, HelpCircle, ChevronRight, MapPin } from "lucide-react";
+import { ArrowLeft, Check, Truck, Package, HelpCircle, ChevronRight, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF, OrderData, InvoiceResult } from "@/lib/invoiceGenerator";
 import InvoicePreviewModal from "@/components/InvoicePreviewModal";
@@ -121,8 +121,6 @@ const OrderDetails = () => {
                 // Transform data
                 const transformedOrder = {
                     ...data,
-                    // Force delivered status for testing as per request
-                    status: "delivered",
                     order_items: data.order_items.map((item: any) => ({
                         ...item,
                         shoe: item.shoes,
@@ -288,11 +286,24 @@ const OrderDetails = () => {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold text-sm tracking-wide self-start md:self-center">
-                                <div className="bg-green-600 rounded-full p-0.5">
-                                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm tracking-wide self-start md:self-center
+                                ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                            'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                <div className={`rounded-full p-0.5
+                                    ${order.status === 'delivered' ? 'bg-green-600' :
+                                        order.status === 'shipped' ? 'bg-blue-600' :
+                                            order.status === 'cancelled' ? 'bg-red-600' :
+                                                'bg-yellow-600'
+                                    }`}>
+                                    {order.status === 'delivered' && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                                    {order.status === 'shipped' && <Truck className="w-3 h-3 text-white" strokeWidth={3} />}
+                                    {order.status === 'cancelled' && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                                    {order.status === 'pending' && <Clock className="w-3 h-3 text-white" strokeWidth={3} />}
                                 </div>
-                                DELIVERED
+                                {order.status.toUpperCase()}
                             </div>
                         </div>
                         <hr className="border-gray-200" />
@@ -400,31 +411,40 @@ const OrderDetails = () => {
 
                                 {/* Timeline Item 1: Delivered */}
                                 <div className="relative pl-8">
-                                    <div className="absolute left-[11px] top-1.5 w-4 h-4 rounded-full bg-red-500 shadow-[0_0_0_4px_rgba(239,35,60,0.2)] z-10" />
-                                    <h4 className="font-bold text-sm">Delivered</h4>
-                                    <p className="text-xs text-muted-foreground mt-0.5 mb-1">{formattedDeliveryDate}, 2:30 PM</p>
-                                    <p className="text-xs text-gray-500">Package delivered to recipient.</p>
-                                </div>
-
-                                {/* Timeline Item 2: Out for Delivery */}
-                                <div className="relative pl-8">
-                                    <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-gray-200 z-10" />
-                                    <h4 className="font-bold text-sm text-gray-500">Out for Delivery</h4>
-                                    <p className="text-xs text-gray-400 mt-0.5">{formattedDeliveryDate}, 8:45 AM</p>
+                                    <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 z-10 
+                                        ${order.status === 'delivered'
+                                            ? 'bg-green-500 border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.2)]'
+                                            : 'bg-white border-gray-300'}`}
+                                    />
+                                    <h4 className={`font-bold text-sm ${order.status === 'delivered' ? 'text-black' : 'text-gray-400'}`}>Delivered</h4>
+                                    {order.status === 'delivered' && (
+                                        <>
+                                            <p className="text-xs text-muted-foreground mt-0.5 mb-1">{formattedDeliveryDate}, 2:30 PM</p>
+                                            <p className="text-xs text-gray-500">Package delivered to recipient.</p>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Timeline Item 3: Shipped */}
                                 <div className="relative pl-8">
-                                    <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-gray-200 z-10" />
-                                    <h4 className="font-bold text-sm text-gray-500">Shipped</h4>
-                                    <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 5:20 PM</p>
-                                    <p className="text-xs text-gray-400">Tokyo Distribution Center</p>
+                                    <div className={`absolute left-[13px] top-1.5 w-3 h-3 rounded-full z-10
+                                        ${['shipped', 'delivered'].includes(order.status)
+                                            ? 'bg-blue-500'
+                                            : 'bg-gray-200'}`}
+                                    />
+                                    <h4 className={`font-bold text-sm ${['shipped', 'delivered'].includes(order.status) ? 'text-black' : 'text-gray-500'}`}>Shipped</h4>
+                                    {['shipped', 'delivered'].includes(order.status) && (
+                                        <>
+                                            <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 5:20 PM</p>
+                                            <p className="text-xs text-gray-400">Tokyo Distribution Center</p>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Timeline Item 4: Order Placed */}
                                 <div className="relative pl-8">
-                                    <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-gray-200 z-10" />
-                                    <h4 className="font-bold text-sm text-gray-500">Order Placed</h4>
+                                    <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-black z-10" />
+                                    <h4 className="font-bold text-sm text-black">Order Placed</h4>
                                     <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 10:15 AM</p>
                                 </div>
                             </div>

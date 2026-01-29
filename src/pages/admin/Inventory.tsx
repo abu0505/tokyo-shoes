@@ -66,7 +66,7 @@ const Inventory = () => {
     mutationFn: async ({ id, status }: { id: string; status: 'in_stock' | 'sold_out' }) => {
       const { error } = await supabase
         .from('shoes')
-        .update({ status })
+        .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;

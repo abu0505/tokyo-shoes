@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { DbShoe } from '@/types/database';
 import { toast } from 'sonner';
+import TextLoader from '../TextLoader';
 
 const shoeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -201,6 +202,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
         status: data.status,
         sizes,
         image_url: imageUrl,
+        updated_at: new Date().toISOString(),
       };
 
       if (isEditing && shoe) {
@@ -410,7 +412,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
                 className="col-span-4 bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
               >
                 {saveMutation.isPending || isUploading
-                  ? 'Saving...'
+                  ? <TextLoader text="Saving" isWhite />
                   : isEditing
                     ? 'Update Shoe'
                     : 'Add Shoe'}
