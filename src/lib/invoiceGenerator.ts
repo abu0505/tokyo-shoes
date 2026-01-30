@@ -26,7 +26,7 @@ export interface OrderData {
     items: OrderItem[];
     subtotal: number;
     shippingCost: number;
-    tax: number;
+    // tax: number; // Removed
     discountCode?: string;
     total: number;
     paymentMethod?: string;
@@ -223,12 +223,7 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
             { align: "right" }
         );
 
-        // Tax
-        summaryY += 8;
-        doc.setTextColor(mutedColor);
-        doc.text("Tax (8%):", 120, summaryY);
-        doc.setTextColor(textColor);
-        doc.text(`Rs.${order.tax.toFixed(2)}`, 190, summaryY, { align: "right" });
+
 
         // Discount (if applicable)
         if (order.discountCode) {

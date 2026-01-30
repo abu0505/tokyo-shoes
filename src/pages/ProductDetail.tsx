@@ -248,7 +248,7 @@ const ProductDetail = () => {
                 <SizeGuideModal />
               </div>
               {selectedSize && (
-                <p className="text-xs md:text-sm text-accent font-medium mb-2 md:mb-3">
+                <p className="text-xs md:text-sm text-foreground font-bold mb-2 md:mb-3">
                   Size {selectedSize} selected
                 </p>
               )}
@@ -259,8 +259,8 @@ const ProductDetail = () => {
                     onClick={() => !isSoldOut && setSelectedSize(size)}
                     disabled={isSoldOut}
                     className={`w-full lg:w-10 h-9 md:h-10 border-2 font-bold text-sm md:text-lg transition-all ${selectedSize === size
-                      ? 'border-accent bg-accent text-accent-foreground'
-                      : 'border-foreground hover:border-accent hover:text-accent'
+                      ? 'border-black bg-black text-white'
+                      : 'border-foreground hover:border-black hover:text-black'
                       } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     {size}

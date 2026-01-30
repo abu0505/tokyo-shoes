@@ -5,6 +5,7 @@ import { ShoppingCart, Truck, FileText } from "lucide-react";
 import { generateInvoicePDF, OrderData, InvoiceResult } from "@/lib/invoiceGenerator";
 import { toast } from "sonner";
 import InvoicePreviewModal from "./InvoicePreviewModal";
+import { getStatusConfig } from "@/lib/orderStatus";
 
 export interface OrderItem {
     id: string;
@@ -53,10 +54,14 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
 
     const [isGenerating, setIsGenerating] = useState(false);
 
-    // Use lowercase status values matching database constraint
-    const isProcessing = order.status === "pending" || order.status === "confirmed" || order.status === "shipped";
-    const isDelivered = order.status === "delivered";
-    const isCancelled = order.status === "cancelled";
+    // Get status config
+    const statusConfig = getStatusConfig(order.status);
+
+    // Status flags
+    const isCancelled = order.status === 'cancelled';
+    const isShipped = order.status === 'shipped';
+    const isDelivered = order.status === 'delivered';
+    const isProcessing = order.status === 'processing' || order.status === 'confirmed';
 
     // Format date
     const formattedDate = order.created_at
@@ -66,42 +71,6 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
             year: "numeric",
         })
         : "Date unknown";
-
-    // Get status badge styles - Updated to match mockup (pill with dot)
-    const getStatusBadgeStyles = () => {
-        if (isDelivered) {
-            return {
-                bg: "bg-green-100",
-                text: "text-green-700",
-                dot: "bg-green-600",
-                label: "DELIVERED"
-            };
-        }
-        if (isProcessing) {
-            return {
-                bg: "bg-orange-100",
-                text: "text-orange-700",
-                dot: "bg-orange-500",
-                label: "PROCESSING"
-            };
-        }
-        if (isCancelled) {
-            return {
-                bg: "bg-gray-100",
-                text: "text-gray-600",
-                dot: "bg-gray-500",
-                label: "CANCELLED"
-            };
-        }
-        return {
-            bg: "bg-gray-100",
-            text: "text-gray-600",
-            dot: "bg-gray-500",
-            label: order.status.toUpperCase()
-        };
-    };
-
-    const statusStyle = getStatusBadgeStyles();
 
     const handleViewInvoice = async () => {
         setIsGenerating(true);
@@ -128,7 +97,7 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
             })),
             subtotal: order.subtotal,
             shippingCost: order.shipping_cost,
-            tax: order.tax,
+            // tax: order.tax, // Removed
             discountCode: order.discount_code || undefined,
             total: order.total,
             paymentMethod: order.payment_method || undefined,
@@ -160,7 +129,8 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
     };
 
     const handleTrackOrder = () => {
-        toast.info("Order tracking coming soon!");
+        // Logic for tracking
+        toast.info("Tracking functionality coming soon!");
     };
 
     return (
@@ -172,25 +142,27 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
                         <h3 className="text-xl font-bold tracking-tight">
                             Order #{order.order_code || "N/A"}
                         </h3>
-                        <div className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-                            {statusStyle.label}
+                        <div className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.iconColor.replace('text-', 'bg-')}`} />
+                            {statusConfig.label.toUpperCase()}
                         </div>
                     </div>
 
-                    {/* View Invoice Link */}
-                    <button
-                        onClick={handleViewInvoice}
-                        disabled={isGenerating}
-                        className="text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed group underline underline-offset-4 decoration-muted-foreground/30 hover:decoration-foreground"
-                    >
-                        {isGenerating ? (
-                            <div className="w-3 h-3 border-2 border-t-transparent border-muted-foreground rounded-full animate-spin" />
-                        ) : (
-                            <FileText className="w-4 h-4" />
-                        )}
-                        {isGenerating ? "Loading..." : "View Invoice"}
-                    </button>
+                    {/* View Invoice Link (Only if delivered) */}
+                    {isDelivered && (
+                        <button
+                            onClick={handleViewInvoice}
+                            disabled={isGenerating}
+                            className="text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed group underline underline-offset-4 decoration-muted-foreground/30 hover:decoration-foreground"
+                        >
+                            {isGenerating ? (
+                                <div className="w-3 h-3 border-2 border-t-transparent border-muted-foreground rounded-full animate-spin" />
+                            ) : (
+                                <FileText className="w-4 h-4" />
+                            )}
+                            {isGenerating ? "Loading..." : "View Invoice"}
+                        </button>
+                    )}
                 </div>
 
                 {/* Sub-header: Date • Price */}
@@ -223,42 +195,35 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                        {isProcessing ? (
-                            <>
-                                <Button
-                                    onClick={handleTrackOrder}
-                                    variant="outline"
-                                    className="flex-1 md:flex-none font-bold rounded-lg h-10 border-gray-200 gap-2"
-                                >
-                                    <Truck className="h-4 w-4" />
-                                    Track Order
-                                </Button>
-                                <Button
-                                    disabled
-                                    className="flex-1 md:flex-none font-bold rounded-lg h-10 bg-gray-100 text-gray-400 hover:bg-gray-100 cursor-not-allowed"
-                                >
-                                    Buy Again
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button
-                                    variant="outline"
-                                    className="flex-1 md:flex-none font-bold rounded-lg h-10 border-gray-200"
-                                    asChild
-                                >
-                                    <Link to={`/order/${order.id}`}>
-                                        View Details
-                                    </Link>
-                                </Button>
-                                <Button
-                                    onClick={onBuyAgain}
-                                    className="flex-1 md:flex-none font-bold rounded-lg h-10 bg-black text-white hover:bg-black/90"
-                                >
-                                    Buy Again
-                                </Button>
-                            </>
+                        {isShipped && (
+                            <Button
+                                onClick={handleTrackOrder}
+                                variant="outline"
+                                className="flex-1 md:flex-none font-bold rounded-lg h-10 border-gray-200 gap-2"
+                            >
+                                <Truck className="h-4 w-4" />
+                                Track Order
+                            </Button>
                         )}
+                        {!isCancelled && !isShipped && !isDelivered && (
+                            <Button
+                                variant="outline"
+                                className="flex-1 md:flex-none font-bold rounded-lg h-10 border-gray-200"
+                                asChild
+                            >
+                                <Link to={`/order/${order.id}`}>
+                                    View Details
+                                </Link>
+                            </Button>
+                        )}
+
+                        {/* Always show Buy Again for all history items as requested */}
+                        <Button
+                            onClick={onBuyAgain}
+                            className="flex-1 md:flex-none font-bold rounded-lg h-10 bg-[#EF233C] text-white hover:bg-black transition-colors"
+                        >
+                            Buy Again
+                        </Button>
                     </div>
                 </div>
             </div>

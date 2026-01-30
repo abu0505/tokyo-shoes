@@ -24,6 +24,9 @@ interface CartContextType {
     clearCart: () => void;
     cartCount: number;
     subtotal: number;
+    couponDetails: { code: string; type: 'percentage' | 'fixed_amount'; value: number } | null;
+    setCouponDetails: (coupon: { code: string; type: 'percentage' | 'fixed_amount'; value: number } | null) => void;
+    removeCoupon: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -31,7 +34,20 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [couponDetails, setCouponDetails] = useState<{ code: string; type: 'percentage' | 'fixed_amount'; value: number } | null>(() => {
+        const saved = localStorage.getItem('appliedCoupon');
+        return saved ? JSON.parse(saved) : null;
+    });
     const [isLoading, setIsLoading] = useState(true);
+
+    // Persist coupon to localStorage
+    useEffect(() => {
+        if (couponDetails) {
+            localStorage.setItem('appliedCoupon', JSON.stringify(couponDetails));
+        } else {
+            localStorage.removeItem('appliedCoupon');
+        }
+    }, [couponDetails]);
 
     // Fetch cart items when user changes
     useEffect(() => {
@@ -196,6 +212,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user, cartItems]);
 
+    const removeCoupon = useCallback(() => {
+        setCouponDetails(null);
+    }, []);
+
     const clearCart = useCallback(async () => {
         if (!user) return;
 
@@ -208,6 +228,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             if (error) throw error;
 
             setCartItems([]);
+            setCouponDetails(null); // Clear coupon when cart is cleared
         } catch (error) {
             console.error('Error clearing cart:', error);
             toast.error('Failed to clear cart');
@@ -225,8 +246,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         updateQuantity,
         clearCart,
         cartCount,
-        subtotal
-    }), [cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, subtotal]);
+        subtotal,
+        couponDetails,
+        setCouponDetails,
+        removeCoupon
+    }), [cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, subtotal, couponDetails, removeCoupon]);
 
     return (
         <CartContext.Provider value={value}>

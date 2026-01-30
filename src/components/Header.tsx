@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, Heart, Settings, Menu, Footprints, MessageCircle, ShoppingCart, ChevronDown, Clock, Package } from 'lucide-react';
 import { useState } from 'react';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { getRandomColor } from '@/lib/colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useCart } from '@/contexts/CartContext';
@@ -26,6 +27,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
 
@@ -38,6 +44,13 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const wishlistCount = wishlistIds.length;
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
 
 
   const handleLogout = async () => {
@@ -110,24 +123,26 @@ const Header = () => {
 
           {/* Right: Icons & Account (Desktop) */}
           <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
-            {/* Wishlist Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link to="/wishlist" className="relative">
-                  <button className="relative p-2 hover:text-accent rounded-lg transition-colors">
-                    <Heart className="w-5 h-5" />
-                    {wishlistCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                        {wishlistCount}
-                      </span>
-                    )}
-                  </button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>My Wishlist</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Wishlist Button - Only for logged in users */}
+            {user && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link to="/wishlist" className="relative">
+                    <button className="relative p-2 hover:text-accent rounded-lg transition-colors">
+                      <Heart className="w-5 h-5" />
+                      {wishlistCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>My Wishlist</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Cart Button - Only for logged in users */}
             {user && (
@@ -150,66 +165,76 @@ const Header = () => {
               </Tooltip>
             )}
 
-            {/* Account Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="font-bold gap-1 hover:bg-black hover:text-white transition-colors">
-                  <User className="h-4 w-4" />
-                  Account
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {user ? (
-                  <>
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
-                          <Settings className="h-4 w-4" />
-                          Manage
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full hover:bg-transparent active:bg-transparent focus:ring-0 focus-visible:ring-0">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || "User"} />
+                      <AvatarFallback className={`font-bold text-base ${user?.email ? getRandomColor(user.email) : 'bg-muted'}`}>
+                        {getInitials(user?.user_metadata?.full_name || user?.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
+                      <User className="h-4 w-4" />
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
 
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/contact" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
-                        <MessageCircle className="h-4 w-4" />
-                        Contact
+                      <Link to="/admin" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
+                        <Settings className="h-4 w-4" />
+                        Manage
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/order-history" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
-                        <Package className="h-4 w-4" />
-                        Order History
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive-foreground">
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                    <div className="px-2 py-1.5 text-xs font-medium truncate">
-                      {user.user_metadata?.full_name || user.email}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/auth" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
-                        <User className="h-4 w-4" />
-                        Login
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/contact" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
-                        <MessageCircle className="h-4 w-4" />
-                        Contact
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+
+                  <DropdownMenuItem asChild>
+                    <Link to="/contact" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
+                      <MessageCircle className="h-4 w-4" />
+                      Contact
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/order-history" className="flex items-center gap-2 cursor-pointer focus:bg-black focus:text-white transition-colors">
+                      <Package className="h-4 w-4" />
+                      Order History
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive-foreground">
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                  <div className="px-2 py-1.5 text-xs font-medium truncate">
+                    {user.user_metadata?.full_name || user.email}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/contact">
+                  <Button variant="ghost" className="font-bold hover:bg-transparent hover:text-accent">
+                    Contact Us
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button variant="outline" className="font-bold border-2 border-black bg-transparent text-black hover:bg-black hover:text-white transition-colors">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth" state={{ view: 'signup' }}>
+                  <Button className="font-bold bg-black text-white hover:bg-black/90">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Actions */}

@@ -26,7 +26,11 @@ interface LocationState {
         phone: string;
         shippingMethod: "standard" | "express";
     };
-    discountCode: string;
+    couponDetails: {
+        code: string;
+        type: 'percentage' | 'fixed_amount';
+        value: number;
+    } | null;
 }
 
 type PaymentMethod = "card" | "paypal" | "upi";
@@ -35,15 +39,13 @@ const Payment = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuth();
-    const { cartItems, subtotal, clearCart } = useCart();
+    const { cartItems, subtotal, clearCart, removeCoupon } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get shipping info from location state
     const locationState = location.state as LocationState | null;
     const shippingInfo = locationState?.shippingInfo;
-
-    // Initialize discount code from passed state if available
-    const [discountCode, setDiscountCode] = useState(locationState?.discountCode || "");
+    const couponDetails = locationState?.couponDetails;
 
     // Payment form state
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
@@ -56,13 +58,16 @@ const Payment = () => {
 
     // Calculate totals
     const shippingCost = shippingInfo?.shippingMethod === "express" ? 15 : 0;
-    const tax = subtotal * 0.08; // 8% tax
+    // Tax removed
 
     // Discount logic
-    const isDiscountValid = discountCode.trim().toUpperCase() === "SAVE10";
-    const discountAmount = isDiscountValid ? subtotal * 0.10 : 0;
+    const discountAmount = couponDetails ? (
+        couponDetails.type === 'percentage'
+            ? (subtotal * couponDetails.value) / 100
+            : Math.min(couponDetails.value, subtotal)
+    ) : 0;
 
-    const total = subtotal + shippingCost + tax - discountAmount;
+    const total = subtotal + shippingCost - discountAmount;
 
     // Redirect if no shipping info or empty cart
     useEffect(() => {
@@ -184,10 +189,11 @@ const Payment = () => {
                     phone: shippingInfo.phone,
                     shipping_method: shippingInfo.shippingMethod,
                     shipping_cost: shippingCost,
+
                     subtotal: subtotal,
-                    tax: tax,
+                    tax: 0, // Tax removed
                     total: total,
-                    discount_code: discountCode || null,
+                    discount_code: couponDetails?.code || null,
                     email_newsletter: shippingInfo.emailNewsletter,
                     payment_method: paymentMethod,
                     status: "pending",
@@ -245,7 +251,11 @@ const Payment = () => {
                     // Update last_used timestamp
                     await supabase
                         .from("saved_addresses")
-                        .update({ last_used: new Date().toISOString() })
+                        .update({
+                            last_used: new Date().toISOString(),
+                            phone: shippingInfo.phone,
+                            postal_code: shippingInfo.postalCode
+                        })
                         .eq("id", existingAddresses[0].id);
                 } else {
                     // Insert new address
@@ -264,6 +274,22 @@ const Payment = () => {
                 // Don't block order completion if address saving fails
                 console.error("Error saving address:", addressError);
             }
+
+            // Update coupon usage if a coupon was used
+            if (couponDetails?.code) {
+                try {
+                    // @ts-ignore
+                    await supabase.rpc('increment_coupon_usage', {
+                        coupon_code: couponDetails.code
+                    });
+                } catch (couponError) {
+                    console.error("Error updating coupon usage:", couponError);
+                    // Don't block order completion for this
+                }
+            }
+
+            // Clear the coupon explicitly
+            removeCoupon();
 
             // Clear the cart
             await clearCart();
@@ -309,7 +335,7 @@ const Payment = () => {
                                         Cart
                                     </Link>
                                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                                    <Link to="/checkout" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    <Link to="/checkout" state={{ couponDetails }} className="text-muted-foreground hover:text-foreground transition-colors">
                                         Information
                                     </Link>
                                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -541,6 +567,7 @@ const Payment = () => {
                                 <div className="mt-6 text-center">
                                     <Link
                                         to="/checkout"
+                                        state={{ couponDetails }}
                                         className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         <ArrowLeft className="w-4 h-4" />
@@ -579,33 +606,6 @@ const Payment = () => {
                                     ))}
                                 </div>
 
-                                {/* Discount Code */}
-                                <div className="flex gap-2 mb-6">
-                                    <Input
-                                        type="text"
-                                        placeholder="Discount code"
-                                        value={discountCode}
-                                        onChange={(e) => setDiscountCode(e.target.value)}
-                                        className="flex-1 rounded-full py-5 px-5 bg-secondary/30 border-border focus-visible:ring-accent"
-                                    />
-                                    <Button
-                                        type="button"
-                                        disabled={!discountCode}
-                                        onClick={() => {
-                                            if (discountCode.trim().toUpperCase() === "SAVE10") {
-                                                toast.success("Discount code applied!");
-                                            } else {
-                                                toast.error("Invalid discount code");
-                                            }
-                                        }}
-                                        className={`rounded-full px-6 font-bold transition-all duration-200 ${discountCode
-                                            ? 'bg-primary text-primary-foreground hover:bg-primary opacity-100 cursor-pointer'
-                                            : 'bg-secondary text-secondary-foreground disabled:opacity-70 disabled:pointer-events-auto cursor-not-allowed'
-                                            }`}
-                                    >
-                                        Apply
-                                    </Button>
-                                </div>
 
                                 {/* Price Breakdown */}
                                 <div className="space-y-3 py-4 border-t border-border">
@@ -619,13 +619,10 @@ const Payment = () => {
                                             {shippingCost === 0 ? "Free" : `₹${shippingCost.toFixed(2)}`}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Taxes</span>
-                                        <span className="font-bold">₹{tax.toFixed(2)}</span>
-                                    </div>
-                                    {isDiscountValid && (
+
+                                    {couponDetails && (
                                         <div className="flex justify-between text-sm text-green-600">
-                                            <span className="font-bold">Discount (SAVE10)</span>
+                                            <span className="font-bold">Discount ({couponDetails.code})</span>
                                             <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                                         </div>
                                     )}

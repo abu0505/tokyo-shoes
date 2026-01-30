@@ -23,7 +23,7 @@ export const useAuth = () => {
     try {
       // Use RPC function with SECURITY DEFINER to bypass RLS
       const { data, error } = await supabase
-        .rpc('check_is_admin', { check_user_id: userId });
+        .rpc('has_role', { _user_id: userId, _role: 'admin' });
 
       if (error) {
         console.error('Error checking admin role via RPC:', error);
@@ -150,7 +150,7 @@ export const useAuth = () => {
     };
   }, [checkAdminRole]);
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -158,7 +158,9 @@ export const useAuth = () => {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          full_name: fullName || '',
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim(),
         }
       }
     });

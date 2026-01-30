@@ -63,7 +63,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
       name: shoe?.name || '',
       brand: shoe?.brand || '',
       price: shoe?.price || 0,
-      status: shoe?.status || 'in_stock',
+      status: (shoe?.status as 'in_stock' | 'sold_out') || 'in_stock',
       sizes: shoe?.sizes?.join(',') || '',
     },
   });
@@ -76,7 +76,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
           name: shoe.name,
           brand: shoe.brand,
           price: shoe.price,
-          status: shoe.status,
+          status: shoe.status as 'in_stock' | 'sold_out',
           sizes: shoe.sizes.join(','),
         });
         setImagePreview(shoe.image_url);

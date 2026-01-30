@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { generateInvoicePDF, OrderData, InvoiceResult } from "@/lib/invoiceGenerator";
 import InvoicePreviewModal from "@/components/InvoicePreviewModal";
 import ReviewDialog from "@/components/ReviewDialog";
+import { ORDER_STATUS_CONFIG, getStatusConfig } from "@/lib/orderStatus";
 
 interface OrderItem {
     id: string;
@@ -190,7 +191,7 @@ const OrderDetails = () => {
             })),
             subtotal: order.subtotal,
             shippingCost: order.shipping_cost,
-            tax: order.tax,
+            // tax: order.tax, // Removed from interface
             discountCode: order.discount_code || undefined,
             total: order.total,
             paymentMethod: order.payment_method || undefined,
@@ -259,6 +260,32 @@ const OrderDetails = () => {
         year: "numeric",
     });
 
+    const statusConfig = getStatusConfig(order.status);
+    const StatusIcon = statusConfig.icon;
+
+    // Helper to determine timeline state
+    const getTimelineStepStatus = (stepIndex: number, currentStatus: string) => {
+        // Steps: 0: Placed, 1: Processing, 2: Shipped, 3: Delivered
+        const statusOrder = ['pending', 'processing', 'shipped', 'delivered'];
+
+        // Handle cancelled specifically
+        if (currentStatus === 'cancelled') {
+            if (stepIndex === 0) return 'completed'; // Order Placed is done
+            if (stepIndex === 1) return 'cancelled'; // Replaced Processing with Cancelled in UI
+            return 'inactive';
+        }
+
+        const currentIndex = statusOrder.indexOf(currentStatus);
+        // If status not found (e.g. 'confirmed'), map it
+        const normalizedIndex = currentIndex === -1
+            ? (currentStatus === 'confirmed' ? 1 : 0)
+            : currentIndex;
+
+        if (stepIndex < normalizedIndex) return 'completed';
+        if (stepIndex === normalizedIndex) return 'current';
+        return 'inactive';
+    };
+
     return (
         <div className="min-h-screen bg-[#f9fafb] text-foreground flex flex-col font-sans">
             <Header />
@@ -286,24 +313,11 @@ const OrderDetails = () => {
                                 </p>
                             </div>
 
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm tracking-wide self-start md:self-center
-                                ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                <div className={`rounded-full p-0.5
-                                    ${order.status === 'delivered' ? 'bg-green-600' :
-                                        order.status === 'shipped' ? 'bg-blue-600' :
-                                            order.status === 'cancelled' ? 'bg-red-600' :
-                                                'bg-yellow-600'
-                                    }`}>
-                                    {order.status === 'delivered' && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                                    {order.status === 'shipped' && <Truck className="w-3 h-3 text-white" strokeWidth={3} />}
-                                    {order.status === 'cancelled' && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                                    {order.status === 'pending' && <Clock className="w-3 h-3 text-white" strokeWidth={3} />}
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm tracking-wide self-start md:self-center ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                                <div className={`rounded-full p-0.5 ${statusConfig.iconColor.replace('text-', 'bg-').replace('600', '600')} text-white`}>
+                                    <StatusIcon className="w-3 h-3 text-white" strokeWidth={3} />
                                 </div>
-                                {order.status.toUpperCase()}
+                                {statusConfig.label.toUpperCase()}
                             </div>
                         </div>
                         <hr className="border-gray-200" />
@@ -334,8 +348,16 @@ const OrderDetails = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Delivery Date</h4>
-                                    <p className="text-lg font-bold">{formattedDeliveryDate}</p>
-                                    <p className="text-sm text-green-600 font-medium">Arrived at 2:30 PM (Simulated)</p>
+                                    {order.status === 'cancelled' ? (
+                                        <p className="text-lg font-bold text-red-500">Order Cancelled</p>
+                                    ) : order.status === 'delivered' ? (
+                                        <>
+                                            <p className="text-lg font-bold">{formattedDeliveryDate}</p>
+                                            <p className="text-sm text-green-600 font-medium">Arrived at 2:30 PM (Simulated)</p>
+                                        </>
+                                    ) : (
+                                        <p className="text-lg font-bold">Estimated: Pending Approval</p>
+                                    )}
                                 </div>
                                 <div>
                                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Shipping Address</h4>
@@ -389,6 +411,14 @@ const OrderDetails = () => {
                                                 >
                                                     WRITE REVIEW
                                                 </Button>
+                                                {order.status !== 'pending' && (
+                                                    <Button
+                                                        onClick={() => handleBuyAgainItem(item)}
+                                                        className="bg-[#EF233C] hover:bg-black text-white font-bold h-10 px-4 rounded-lg transition-colors text-sm uppercase"
+                                                    >
+                                                        BUY AGAIN
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -401,52 +431,66 @@ const OrderDetails = () => {
                     {/* RIGHT COLUMN (1/3 width) - Sticky Sidebar */}
                     <div className="lg:col-span-1 space-y-6">
 
-                        {/* Order Timeline (Top Right - as per mockup structure suggestion, or separate widget) */}
-                        {/* Actually mockup shows timeline in a card. Let's put it in a card. */}
+                        {/* Order Timeline */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 className="font-bold text-lg mb-6">Delivery Timeline</h3>
+                            <h3 className="font-bold text-lg mb-6">Order Status</h3>
                             <div className="relative pl-3 space-y-8">
-                                {/* Vertical Line */}
                                 <div className="absolute left-[30px] top-2 bottom-2 w-0.5 bg-gray-100" />
 
-                                {/* Timeline Item 1: Delivered */}
-                                <div className="relative pl-8">
-                                    <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 z-10 
-                                        ${order.status === 'delivered'
-                                            ? 'bg-green-500 border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.2)]'
-                                            : 'bg-white border-gray-300'}`}
-                                    />
-                                    <h4 className={`font-bold text-sm ${order.status === 'delivered' ? 'text-black' : 'text-gray-400'}`}>Delivered</h4>
-                                    {order.status === 'delivered' && (
-                                        <>
-                                            <p className="text-xs text-muted-foreground mt-0.5 mb-1">{formattedDeliveryDate}, 2:30 PM</p>
-                                            <p className="text-xs text-gray-500">Package delivered to recipient.</p>
-                                        </>
-                                    )}
-                                </div>
+                                {order.status === 'cancelled' ? (
+                                    <>
+                                        {/* Cancelled State Timeline */}
+                                        <div className="relative pl-8">
+                                            <div className="absolute left-[11px] top-1.5 w-4 h-4 rounded-full bg-red-500 shadow-[0_0_0_4px_rgba(239,35,60,0.2)] z-10" />
+                                            <h4 className="font-bold text-sm text-black">Cancelled</h4>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Order has been cancelled.</p>
+                                        </div>
+                                        <div className="relative pl-8">
+                                            <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-black z-10" />
+                                            <h4 className="font-bold text-sm text-gray-500">Order Placed</h4>
+                                            <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 10:15 AM</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Standard Timeline */}
+                                        {/* Step 4: Delivered */}
+                                        <div className="relative pl-8">
+                                            <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 z-10 
+                                                ${getTimelineStepStatus(3, order.status) === 'current' || getTimelineStepStatus(3, order.status) === 'completed'
+                                                    ? 'bg-green-500 border-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.2)]'
+                                                    : 'bg-white border-gray-200'}`}
+                                            />
+                                            <h4 className={`font-bold text-sm ${getTimelineStepStatus(3, order.status) !== 'inactive' ? 'text-black' : 'text-gray-400'}`}>Delivered</h4>
+                                            {getTimelineStepStatus(3, order.status) !== 'inactive' && (
+                                                <p className="text-xs text-gray-500 mt-0.5">Package delivered to recipient.</p>
+                                            )}
+                                        </div>
 
-                                {/* Timeline Item 3: Shipped */}
-                                <div className="relative pl-8">
-                                    <div className={`absolute left-[13px] top-1.5 w-3 h-3 rounded-full z-10
-                                        ${['shipped', 'delivered'].includes(order.status)
-                                            ? 'bg-blue-500'
-                                            : 'bg-gray-200'}`}
-                                    />
-                                    <h4 className={`font-bold text-sm ${['shipped', 'delivered'].includes(order.status) ? 'text-black' : 'text-gray-500'}`}>Shipped</h4>
-                                    {['shipped', 'delivered'].includes(order.status) && (
-                                        <>
-                                            <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 5:20 PM</p>
-                                            <p className="text-xs text-gray-400">Tokyo Distribution Center</p>
-                                        </>
-                                    )}
-                                </div>
+                                        {/* Step 3: Shipped */}
+                                        <div className="relative pl-8">
+                                            <div className={`absolute left-[13px] top-1.5 w-3 h-3 rounded-full z-10 
+                                                ${getTimelineStepStatus(2, order.status) !== 'inactive' ? 'bg-purple-500' : 'bg-gray-200'}`}
+                                            />
+                                            <h4 className={`font-bold text-sm ${getTimelineStepStatus(2, order.status) !== 'inactive' ? 'text-black' : 'text-gray-400'}`}>Shipped</h4>
+                                        </div>
 
-                                {/* Timeline Item 4: Order Placed */}
-                                <div className="relative pl-8">
-                                    <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-black z-10" />
-                                    <h4 className="font-bold text-sm text-black">Order Placed</h4>
-                                    <p className="text-xs text-gray-400 mt-0.5">{formattedDate}, 10:15 AM</p>
-                                </div>
+                                        {/* Step 2: Processing */}
+                                        <div className="relative pl-8">
+                                            <div className={`absolute left-[13px] top-1.5 w-3 h-3 rounded-full z-10 
+                                                ${getTimelineStepStatus(1, order.status) !== 'inactive' ? 'bg-blue-500' : 'bg-gray-200'}`}
+                                            />
+                                            <h4 className={`font-bold text-sm ${getTimelineStepStatus(1, order.status) !== 'inactive' ? 'text-black' : 'text-gray-400'}`}>Processing</h4>
+                                        </div>
+
+                                        {/* Step 1: Placed */}
+                                        <div className="relative pl-8">
+                                            <div className="absolute left-[13px] top-1.5 w-3 h-3 rounded-full bg-black z-10" />
+                                            <h4 className="font-bold text-sm text-black">Order Placed</h4>
+                                            <p className="text-xs text-gray-400 mt-0.5">{formattedDate}</p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -462,23 +506,19 @@ const OrderDetails = () => {
                                     <span>Shipping</span>
                                     <span className="font-medium text-foreground">{order.shipping_cost === 0 ? "Free" : `Rs.${order.shipping_cost}`}</span>
                                 </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span>Tax (8%)</span>
-                                    <span className="font-medium text-foreground">Rs.{order.tax.toLocaleString()}</span>
-                                </div>
 
-                                <div className="pt-4 border-t border-gray-100 flex justify-between items-end">
-                                    <span className="font-bold text-base">Total</span>
-                                    <span className="font-black text-2xl">Rs.{order.total.toLocaleString()}</span>
-                                </div>
                             </div>
 
-
+                            <div className="pt-4 border-t border-gray-100 flex justify-between items-end">
+                                <span className="font-bold text-base">Total</span>
+                                <span className="font-black text-2xl">Rs.{order.total.toLocaleString()}</span>
+                            </div>
                         </div>
-
                     </div>
+
                 </div>
-            </main>
+
+            </main >
 
             <InvoicePreviewModal
                 isOpen={invoiceModalOpen}
@@ -488,17 +528,17 @@ const OrderDetails = () => {
                 orderCode={order.order_code || "N/A"}
             />
 
-            {selectedItemToReview && user && (
-                <ReviewDialog
-                    isOpen={reviewModalOpen}
-                    onClose={() => setReviewModalOpen(false)}
-                    shoeId={selectedItemToReview.shoe_id}
-                    userId={user.id}
-                />
-            )}
-
-            <Footer />
-        </div>
+            {
+                selectedItemToReview && user && (
+                    <ReviewDialog
+                        isOpen={reviewModalOpen}
+                        onClose={() => setReviewModalOpen(false)}
+                        shoeId={selectedItemToReview.shoe_id}
+                        userId={user.id}
+                    />
+                )
+            }
+        </div >
     );
 };
 

@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, ShoppingBag, LogOut, ArrowLeft, Menu, Package } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, LogOut, ArrowLeft, Menu, Package, Ticket } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -40,6 +40,7 @@ const AdminLayout = ({ children, header }: AdminLayoutProps) => {
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/orders', icon: Package, label: 'Orders' },
+    { path: '/admin/coupons', icon: Ticket, label: 'Coupons' },
     { path: '/admin/inventory', icon: ShoppingBag, label: 'Inventory' },
   ];
 

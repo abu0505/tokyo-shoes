@@ -22,17 +22,28 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
 });
 
-type AuthFormData = z.infer<typeof signupSchema>;
+const resetSchema = z.object({
+  email: z.string().email('Please enter a valid email'),
+});
+
+type AuthView = 'login' | 'signup' | 'reset';
+type AuthFormData = {
+  email: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+};
 
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, signInWithGoogle, isLoading: authLoading } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(true);
+  const [view, setView] = useState<AuthView>((location.state as { view?: AuthView })?.view || 'login');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,13 +55,19 @@ const Auth = () => {
     formState: { errors },
     reset,
   } = useForm<AuthFormData>({
-    resolver: zodResolver(isLogin ? loginSchema : signupSchema),
+    resolver: zodResolver(
+      view === 'login'
+        ? loginSchema
+        : view === 'signup'
+          ? signupSchema
+          : resetSchema
+    ),
   });
 
   const checkIsAdmin = async (userId: string) => {
     try {
       // Use RPC function first
-      const { data, error } = await supabase.rpc('check_is_admin', { check_user_id: userId });
+      const { data, error } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
 
       if (!error && data) return true;
 
@@ -94,7 +111,7 @@ const Auth = () => {
   const onSubmit = async (data: AuthFormData) => {
     setIsSubmitting(true);
     try {
-      if (isLogin) {
+      if (view === 'login' && data.password) {
         const { data: authData, error } = await signIn(data.email, data.password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
@@ -108,8 +125,8 @@ const Auth = () => {
         if (authData.user) {
           await handlePostAuth(authData.user.id);
         }
-      } else {
-        const { data: signUpData, error } = await signUp(data.email, data.password, data.fullName || '');
+      } else if (view === 'signup' && data.password && data.firstName && data.lastName) {
+        const { data: signUpData, error } = await signUp(data.email, data.password, data.firstName, data.lastName);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast.error('An account with this email already exists');
@@ -124,8 +141,18 @@ const Auth = () => {
           await handlePostAuth(signUpData.user.id, true);
         } else {
           toast.success('Account created! Please check your email to verify.');
-          setIsLogin(true);
+          setView('login');
           reset();
+        }
+      } else if (view === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+          redirectTo: window.location.origin + '/update-password',
+        });
+        if (error) {
+          toast.error(error.message);
+        } else {
+          toast.success("Check your email for the password reset link.");
+          setView('login');
         }
       }
     } finally {
@@ -152,7 +179,7 @@ const Auth = () => {
       transition={{ duration: 0.3 }}
     >
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-lg"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
@@ -161,7 +188,7 @@ const Auth = () => {
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
-          className="mb-6 -ml-4 font-bold hover:bg-transparent hover:text-accent group"
+          className="mb-4 -ml-4 font-bold hover:bg-transparent hover:text-accent group"
         >
           <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
           BACK TO HOME
@@ -171,32 +198,56 @@ const Auth = () => {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black tracking-tighter">TOKYO</h1>
           <p className="text-muted-foreground mt-2 text-sm font-medium">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+            {view === 'login'
+              ? 'Welcome back'
+              : view === 'signup'
+                ? 'Create your account'
+                : 'Reset your password'}
           </p>
         </div>
 
         {/* Auth Card */}
         <div className="bg-card border-2 border-foreground p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Full Name - Only show for signup */}
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="font-bold text-sm tracking-wide">
-                  FULL NAME
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Your full name"
-                    className="pl-10 h-12 border-2 border-foreground focus:border-accent"
-                    {...register('fullName')}
-                  />
+            {/* Name Fields - Only show for signup */}
+            {view === 'signup' && (
+              <div className="flex gap-4">
+                <div className="space-y-2 flex-1">
+                  <Label htmlFor="firstName" className="font-bold text-sm tracking-wide">
+                    FIRST NAME
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="John"
+                      className="pl-10 h-12 border-2 border-foreground focus:border-accent"
+                      {...register('firstName')}
+                    />
+                  </div>
+                  {errors.firstName && (
+                    <p className="text-sm text-destructive font-medium">{errors.firstName.message}</p>
+                  )}
                 </div>
-                {errors.fullName && (
-                  <p className="text-sm text-destructive font-medium">{errors.fullName.message}</p>
-                )}
+                <div className="space-y-2 flex-1">
+                  <Label htmlFor="lastName" className="font-bold text-sm tracking-wide">
+                    LAST NAME
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Doe"
+                      className="pl-10 h-12 border-2 border-foreground focus:border-accent"
+                      {...register('lastName')}
+                    />
+                  </div>
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive font-medium">{errors.lastName.message}</p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -221,31 +272,47 @@ const Auth = () => {
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="font-bold text-sm tracking-wide">
-                PASSWORD
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 border-2 border-foreground focus:border-accent"
-                  {...register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+            {view !== 'reset' && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password" className="font-bold text-sm tracking-wide">
+                    PASSWORD
+                  </Label>
+                  {view === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setView('reset');
+                        reset();
+                      }}
+                      className="text-xs font-medium text-muted-foreground hover:text-accent transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10 h-12 border-2 border-foreground focus:border-accent"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
+                )}
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
-              )}
-            </div>
+            )}
 
             {/* Submit Button */}
             <Button
@@ -253,7 +320,13 @@ const Auth = () => {
               disabled={isSubmitting || authLoading}
               className="w-full h-12 bg-foreground text-background hover:bg-accent hover:text-accent-foreground font-bold text-lg transition-all"
             >
-              {isSubmitting ? <TextLoader className="text-background" isWhite /> : isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'}
+              {isSubmitting
+                ? <TextLoader className="text-background" isWhite />
+                : view === 'login'
+                  ? 'SIGN IN'
+                  : view === 'signup'
+                    ? 'CREATE ACCOUNT'
+                    : 'SEND RESET LINK'}
             </Button>
           </form>
 
@@ -294,22 +367,51 @@ const Auth = () => {
 
           {/* Toggle */}
           <p className="text-center mt-6 text-sm">
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                reset();
-              }}
-              className="font-bold text-accent hover:underline"
-            >
-              {isLogin ? 'Sign up' : 'Sign in'}
-            </button>
+            {view === 'login' ? (
+              <>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView('signup');
+                    reset();
+                  }}
+                  className="font-bold text-accent hover:underline"
+                >
+                  Sign up
+                </button>
+              </>
+            ) : view === 'signup' ? (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView('login');
+                    reset();
+                  }}
+                  className="font-bold text-accent hover:underline"
+                >
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setView('login');
+                  reset();
+                }}
+                className="font-bold text-accent hover:underline"
+              >
+                Back to Sign in
+              </button>
+            )}
           </p>
         </div>
 
         {/* Note about email confirmation */}
-        {!isLogin && (
+        {view === 'signup' && (
           <p className="text-center mt-4 text-xs text-muted-foreground">
             You may need to verify your email before signing in.
             <br />

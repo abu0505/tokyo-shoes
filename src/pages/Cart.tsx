@@ -1,4 +1,5 @@
 import { useCart } from "@/contexts/CartContext";
+import { useCoupon } from "@/hooks/useCoupon";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Minus, Plus, X, ArrowRight, Lock } from "lucide-react";
@@ -19,25 +20,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const Cart = () => {
-    const { cartItems, removeFromCart, updateQuantity, subtotal, cartCount } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, subtotal, cartCount, couponDetails, setCouponDetails, removeCoupon } = useCart();
     const [itemToRemove, setItemToRemove] = useState<string | null>(null);
-
-    // Initialize from localStorage for persistence across navigation
-    const [promoCode, setPromoCode] = useState(() => {
-        return localStorage.getItem('promoCode') || "";
-    });
-    const [isDiscountApplied, setIsDiscountApplied] = useState(() => {
-        return localStorage.getItem('isDiscountApplied') === 'true';
-    });
-
-    // Persist to localStorage when values change
-    useEffect(() => {
-        localStorage.setItem('promoCode', promoCode);
-    }, [promoCode]);
-
-    useEffect(() => {
-        localStorage.setItem('isDiscountApplied', isDiscountApplied.toString());
-    }, [isDiscountApplied]);
 
     const handleRemoveClick = (id: string) => {
         setItemToRemove(id);
@@ -47,14 +31,47 @@ const Cart = () => {
         if (itemToRemove) {
             removeFromCart(itemToRemove);
             setItemToRemove(null);
+            toast.info("Item removed from cart");
         }
+    };
+
+    const [promoInput, setPromoInput] = useState("");
+    const { validateCoupon, isValidating } = useCoupon();
+
+
+    // Handle coupon application
+    const handleApplyCoupon = async () => {
+        if (!promoInput.trim()) return;
+
+        const result = await validateCoupon(promoInput, subtotal);
+
+        if (result) {
+            setCouponDetails({
+                code: result.code,
+                type: result.discountType,
+                value: result.discountValue
+            });
+            setPromoInput(""); // Clear input on success
+            toast.success(`Coupon ${result.code} applied!`);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        removeCoupon();
+        toast.success("Coupon removed");
     };
 
     // Static values for now as per design mockup/requirements
     const shipping = subtotal > 200 ? 0 : 15;
-    const tax = subtotal * 0.07; // 7% tax
-    const discountAmount = isDiscountApplied ? subtotal * 0.10 : 0;
-    const total = subtotal + shipping + tax - discountAmount;
+    // Tax removed as per request
+
+    const discountAmount = couponDetails ? (
+        couponDetails.type === 'percentage'
+            ? (subtotal * couponDetails.value) / 100
+            : Math.min(couponDetails.value, subtotal)
+    ) : 0;
+
+    const total = subtotal + shipping - discountAmount;
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -176,13 +193,15 @@ const Cart = () => {
                                                 {shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between text-sm font-medium">
-                                            <span className="text-muted-foreground">Estimated Tax</span>
-                                            <span className="font-bold">₹{tax.toFixed(2)}</span>
-                                        </div>
-                                        {isDiscountApplied && (
+
+                                        {couponDetails && (
                                             <div className="flex justify-between text-sm font-medium text-green-600">
-                                                <span>Discount (SAVE10)</span>
+                                                <span className="flex items-center gap-2">
+                                                    Discount ({couponDetails.code})
+                                                    <button onClick={handleRemoveCoupon} className="text-destructive hover:text-red-700">
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </span>
                                                 <span>-₹{discountAmount.toFixed(2)}</span>
                                             </div>
                                         )}
@@ -197,28 +216,22 @@ const Cart = () => {
                                     <div className="relative mb-6">
                                         <Input
                                             placeholder="Discount code"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            className="bg-background border-border rounded-full py-6 pl-6 pr-12 font-medium focus-visible:ring-accent"
+                                            value={promoInput}
+                                            onChange={(e) => setPromoInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                                            disabled={!!couponDetails}
+                                            className="bg-background border-border rounded-full py-6 pl-6 pr-12 font-medium focus-visible:ring-accent disabled:opacity-50"
                                         />
                                         <button
-                                            disabled={!promoCode.trim()}
-                                            onClick={() => {
-                                                if (promoCode.trim().toUpperCase() === "SAVE10") {
-                                                    setIsDiscountApplied(true);
-                                                    toast.success("Discount code applied! It will be deducted at checkout.");
-                                                } else {
-                                                    setIsDiscountApplied(false);
-                                                    toast.error("Invalid discount code");
-                                                }
-                                            }}
+                                            disabled={!promoInput.trim() || !!couponDetails || isValidating}
+                                            onClick={handleApplyCoupon}
                                             className="absolute right-2 top-1/2 -translate-y-1/2 bg-foreground text-background p-2 rounded-full enabled:hover:bg-accent enabled:hover:text-accent-foreground transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                                         >
-                                            <ArrowRight className="w-4 h-4" />
+                                            {isValidating ? <div className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                                         </button>
                                     </div>
 
-                                    <Link to="/checkout" state={{ discountCode: isDiscountApplied ? "SAVE10" : "" }}>
+                                    <Link to="/checkout" state={{ couponDetails }}>
                                         <Button className="w-full text-lg font-black h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-accent hover:text-accent-foreground hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                                             PROCEED TO CHECKOUT
                                         </Button>

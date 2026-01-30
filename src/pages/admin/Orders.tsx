@@ -420,7 +420,9 @@ const AdminOrders = () => {
                                                     <p className="font-bold">
                                                         {order.first_name} {order.last_name.charAt(0)}.
                                                     </p>
-                                                    <p className="text-sm text-muted-foreground">{order.email}</p>
+                                                    <p className="text-sm text-muted-foreground" title={order.email}>
+                                                        {order.email.length > 15 ? order.email.substring(0, 15) + "..." : order.email}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </TableCell>

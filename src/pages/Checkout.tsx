@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useCoupon } from "@/hooks/useCoupon";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Lock, ChevronRight } from "lucide-react";
+import { ArrowLeft, Lock, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -33,7 +34,7 @@ const Checkout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuth();
-    const { cartItems, subtotal } = useCart();
+    const { cartItems, subtotal, couponDetails, setCouponDetails, removeCoupon } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Saved addresses state
@@ -41,8 +42,8 @@ const Checkout = () => {
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
     const [showAddressForm, setShowAddressForm] = useState(false);
 
-    // Initialize discount code from passed state if available
-    const [discountCode, setDiscountCode] = useState(location.state?.discountCode || "");
+    const [promoInput, setPromoInput] = useState("");
+    const { validateCoupon, isValidating } = useCoupon();
 
     const [formData, setFormData] = useState<ShippingInfo>({
         email: user?.email || "",
@@ -106,16 +107,64 @@ const Checkout = () => {
 
     // Calculate totals
     const shippingCost = formData.shippingMethod === "express" ? 15 : (subtotal > 200 ? 0 : 0);
-    const tax = subtotal * 0.08; // 8% tax
+    // Tax removed
 
     // Discount logic
-    const isDiscountValid = discountCode.trim().toUpperCase() === "SAVE10";
-    const discountAmount = isDiscountValid ? subtotal * 0.10 : 0;
+    const discountAmount = couponDetails ? (
+        couponDetails.type === 'percentage'
+            ? (subtotal * couponDetails.value) / 100
+            : Math.min(couponDetails.value, subtotal)
+    ) : 0;
 
-    const total = subtotal + shippingCost + tax - discountAmount;
+    const total = subtotal + shippingCost - discountAmount;
+
+    // Handle coupon application
+    const handleApplyCoupon = async () => {
+        if (!promoInput.trim()) return;
+
+        const result = await validateCoupon(promoInput, subtotal);
+
+        if (result) {
+            setCouponDetails({
+                code: result.code,
+                type: result.discountType,
+                value: result.discountValue
+            });
+            setPromoInput("");
+            toast.success(`Coupon ${result.code} applied!`);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        removeCoupon();
+        toast.success("Coupon removed");
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+
+        // Postal code validation
+        if (name === "postalCode") {
+            // Check if value contains any non-numeric characters
+            if (/[^0-9]/.test(value)) {
+                toast.error("Postal code must contain only numbers");
+                return;
+            }
+            // Limit to 6 digits
+            if (value.length > 6) return;
+        }
+
+        // Phone validation
+        if (name === "phone") {
+            // Check if value contains any non-numeric characters
+            if (/[^0-9]/.test(value)) {
+                toast.error("Phone number must contain only numbers");
+                return;
+            }
+            // Limit to 10 digits
+            if (value.length > 10) return;
+        }
+
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -193,7 +242,7 @@ const Checkout = () => {
         navigate("/payment", {
             state: {
                 shippingInfo: formData,
-                discountCode: discountCode,
+                couponDetails: couponDetails, // Pass from context
             },
         });
     };
@@ -225,7 +274,7 @@ const Checkout = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-200px)]">
                         {/* Left Side - Form (Darker Background) */}
-                        <div className="flex-1 bg-secondary/40 px-4 md:px-8 lg:px-12 xl:px-16 py-8 lg:py-12">
+                        <div className="flex-1 bg-secondary/80 px-4 md:px-8 lg:px-12 xl:px-16 py-8 lg:py-12">
                             <div className="max-w-xl mx-auto lg:ml-auto">
                                 {/* Breadcrumb */}
                                 <nav className="flex items-center gap-2 text-sm mb-8 flex-wrap">
@@ -369,6 +418,7 @@ const Checkout = () => {
                                                     placeholder="Postal code"
                                                     value={formData.postalCode}
                                                     onChange={handleInputChange}
+                                                    maxLength={6}
                                                     className="rounded-full py-6 px-5 bg-background border-border focus-visible:ring-accent"
                                                     required
                                                 />
@@ -381,6 +431,7 @@ const Checkout = () => {
                                                     placeholder="Phone"
                                                     value={formData.phone}
                                                     onChange={handleInputChange}
+                                                    maxLength={10}
                                                     className="rounded-full py-6 px-5 bg-background border-border focus-visible:ring-accent"
                                                     required
                                                 />
@@ -486,31 +537,44 @@ const Checkout = () => {
                                 </div>
 
                                 {/* Discount Code */}
-                                <div className="flex gap-2 mb-6">
-                                    <Input
-                                        type="text"
-                                        placeholder="Discount code"
-                                        value={discountCode}
-                                        onChange={(e) => setDiscountCode(e.target.value)}
-                                        className="flex-1 rounded-full py-5 px-5 bg-secondary/30 border-border focus-visible:ring-accent"
-                                    />
-                                    <Button
-                                        type="button"
-                                        disabled={!discountCode}
-                                        onClick={() => {
-                                            if (discountCode.trim().toUpperCase() === "SAVE10") {
-                                                toast.success("Discount code applied!");
-                                            } else {
-                                                toast.error("Invalid discount code");
-                                            }
-                                        }}
-                                        className={`rounded-full px-6 font-bold transition-all duration-200 ${discountCode
-                                            ? 'bg-primary text-primary-foreground hover:bg-primary opacity-100 cursor-pointer'
-                                            : 'bg-secondary text-secondary-foreground disabled:opacity-70 disabled:pointer-events-auto cursor-not-allowed'
-                                            }`}
-                                    >
-                                        Apply
-                                    </Button>
+                                <div className="space-y-4 mb-6">
+                                    {couponDetails ? (
+                                        <div className="flex justify-between items-center bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-green-700">Coupon Applied</span>
+                                                <span className="text-xs text-green-600 font-mono">{couponDetails.code}</span>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleRemoveCoupon}
+                                                className="text-green-700 hover:text-green-800 hover:bg-green-500/20 h-8 w-8 p-0"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                type="text"
+                                                placeholder="Discount code"
+                                                value={promoInput}
+                                                onChange={(e) => setPromoInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
+                                                disabled={isValidating}
+                                                className="flex-1 rounded-full py-5 px-5 bg-secondary/30 border-border focus-visible:ring-accent"
+                                            />
+                                            <Button
+                                                type="button"
+                                                disabled={!promoInput.trim() || isValidating}
+                                                onClick={handleApplyCoupon}
+                                                className="rounded-full px-6 font-bold transition-all duration-200"
+                                            >
+                                                {isValidating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : "Apply"}
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Price Breakdown */}
@@ -525,13 +589,9 @@ const Checkout = () => {
                                             {shippingCost === 0 ? "Free" : `₹${shippingCost.toFixed(2)}`}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Taxes</span>
-                                        <span className="font-bold">₹{tax.toFixed(2)}</span>
-                                    </div>
-                                    {isDiscountValid && (
+                                    {couponDetails && (
                                         <div className="flex justify-between text-sm text-green-600">
-                                            <span className="font-bold">Discount (SAVE10)</span>
+                                            <span className="font-bold">Discount ({couponDetails.code})</span>
                                             <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                                         </div>
                                     )}

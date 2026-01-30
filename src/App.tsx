@@ -8,9 +8,12 @@ import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import Auth from "./pages/Auth";
+import UpdatePassword from "./pages/UpdatePassword";
+import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminOrders from "./pages/admin/Orders";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
+import AdminCoupons from "./pages/admin/Coupons";
 import Inventory from "./pages/admin/Inventory";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
@@ -38,9 +41,12 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
+              <Route path="/admin/coupons" element={<AdminCoupons />} />
               <Route path="/admin/inventory" element={<Inventory />} />
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/contact" element={<Contact />} />

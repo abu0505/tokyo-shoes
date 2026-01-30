@@ -101,7 +101,7 @@ const AdminOrderDetails = () => {
             })),
             subtotal: order.subtotal,
             shippingCost: order.shipping_cost,
-            tax: order.tax,
+            // tax: order.tax, // Removed
             discountCode: order.discount_code || undefined,
             total: order.total,
             paymentMethod: order.payment_method || undefined,
@@ -285,10 +285,7 @@ const AdminOrderDetails = () => {
                                                 <span className="text-muted-foreground">Shipping ({order?.shipping_method || 'Standard'})</span>
                                                 <span className="text-foreground font-medium">{formatPrice(order?.shipping_cost || 0)}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Tax (8%)</span>
-                                                <span className="text-foreground font-medium">{formatPrice(order?.tax || 0)}</span>
-                                            </div>
+
                                             <div className="flex justify-between pt-3 border-t border-border">
                                                 <span className="font-bold text-foreground">Grand Total</span>
                                                 <span className="font-black text-xl text-black">{formatPrice(order?.total || 0)}</span>

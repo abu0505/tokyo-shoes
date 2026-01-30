@@ -20,54 +20,44 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="text-left">
-            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">QUICK LINKS</h3>
+            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">SHOP & DISCOVER</h3>
             <ul className="space-y-2 md:space-y-3">
               <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  New Arrivals
-                </a>
+                <Link to="/" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Shop Now
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Best Sellers
-                </a>
+                <Link to="/wishlist" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  My Wishlist
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  All Brands
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Size Guide
-                </a>
+                <Link to="/cart" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Shopping Cart
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Support */}
           <div className="text-left">
-            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">SUPPORT</h3>
+            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">MY ACCOUNT</h3>
             <ul className="space-y-2 md:space-y-3">
+              <li>
+                <Link to="/profile" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  My Profile
+                </Link>
+              </li>
+              <li>
+                <Link to="/order-history" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Order History
+                </Link>
+              </li>
               <li>
                 <Link to="/contact" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
                   Contact Us
                 </Link>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  FAQs
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Shipping Info
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Returns
-                </a>
               </li>
             </ul>
           </div>
