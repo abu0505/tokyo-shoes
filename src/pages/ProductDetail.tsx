@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, ShoppingCart } from 'lucide-react';
@@ -176,6 +177,15 @@ const ProductDetail = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      <Helmet>
+        <title>{shoe.name} | Tokyo Kicks</title>
+        <meta name="description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)}. ${shoe.brand} - Available now at Tokyo Kicks.`} />
+        <meta property="og:title" content={`${shoe.name} | Tokyo Kicks`} />
+        <meta property="og:description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)} at Tokyo Kicks.`} />
+        <meta property="og:image" content={shoe.image} />
+        <meta property="og:url" content={window.location.href} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
       <Header />
 
       <motion.main

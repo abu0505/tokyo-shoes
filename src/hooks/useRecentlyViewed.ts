@@ -33,8 +33,18 @@ export const useRecentlyViewed = () => {
           console.error('Error in loadItems:', error);
         }
       } else {
-        // Clear for guests
-        setRecentlyViewed([]);
+        // Load from LocalStorage for guests
+        const stored = localStorage.getItem('recently_viewed_storage');
+        if (stored) {
+          try {
+            setRecentlyViewed(JSON.parse(stored));
+          } catch (e) {
+            console.error('Error parsing recently viewed from local storage', e);
+            setRecentlyViewed([]);
+          }
+        } else {
+          setRecentlyViewed([]);
+        }
       }
     };
 
@@ -42,13 +52,18 @@ export const useRecentlyViewed = () => {
   }, [user]);
 
   const addToRecentlyViewed = useCallback(async (shoeId: string) => {
-    if (!user) return;
-
     // Optimistic update
     setRecentlyViewed((prev) => {
       const filtered = prev.filter((id) => id !== shoeId);
-      return [shoeId, ...filtered].slice(0, MAX_ITEMS);
+      const newIds = [shoeId, ...filtered].slice(0, MAX_ITEMS);
+
+      if (!user) {
+        localStorage.setItem('recently_viewed_storage', JSON.stringify(newIds));
+      }
+      return newIds;
     });
+
+    if (!user) return;
 
     // Save to Supabase
     try {
@@ -71,10 +86,16 @@ export const useRecentlyViewed = () => {
   }, [user]);
 
   const removeFromRecentlyViewed = useCallback(async (shoeId: string) => {
-    if (!user) return;
-
     // Optimistic update
-    setRecentlyViewed((prev) => prev.filter((id) => id !== shoeId));
+    setRecentlyViewed((prev) => {
+      const newIds = prev.filter((id) => id !== shoeId);
+      if (!user) {
+        localStorage.setItem('recently_viewed_storage', JSON.stringify(newIds));
+      }
+      return newIds;
+    });
+
+    if (!user) return;
 
     // Remove from Supabase
     try {
@@ -93,10 +114,13 @@ export const useRecentlyViewed = () => {
   }, [user]);
 
   const clearRecentlyViewed = useCallback(async () => {
-    if (!user) return;
-
     // Optimistic update
     setRecentlyViewed([]);
+
+    if (!user) {
+      localStorage.removeItem('recently_viewed_storage');
+      return;
+    }
 
     // Clear from Supabase
     try {

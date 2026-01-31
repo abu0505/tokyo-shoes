@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { MoreHorizontal, Trash2, Copy } from 'lucide-react';
+import { MoreHorizontal, Trash2, Copy, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,10 +42,13 @@ interface CouponTableProps {
 const CouponTable = ({ coupons, isLoading }: CouponTableProps) => {
     const queryClient = useQueryClient();
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
-    const copyToClipboard = (text: string) => {
+    const copyToClipboard = (id: string, text: string) => {
         navigator.clipboard.writeText(text);
+        setCopiedId(id);
         toast.success('Coupon code copied!');
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
     const handleDelete = async () => {
@@ -155,10 +158,14 @@ const CouponTable = ({ coupons, isLoading }: CouponTableProps) => {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                                        onClick={() => copyToClipboard(coupon.code)}
+                                        className="h-6 w-6 text-muted-foreground hover:bg-transparent"
+                                        onClick={() => copyToClipboard(coupon.id, coupon.code)}
                                     >
-                                        <Copy className="h-3 w-3" />
+                                        {copiedId === coupon.id ? (
+                                            <Check className="h-3.5 w-3.5 text-green-600" />
+                                        ) : (
+                                            <Copy className="h-3 w-3" />
+                                        )}
                                     </Button>
                                 </div>
                             </TableCell>

@@ -441,8 +441,10 @@ const AdminOrders = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="font-medium truncate max-w-[200px]" title={order.product_name}>
-                                                    {order.product_name || 'Unknown Product'}
+                                                <span className="font-medium" title={order.product_name}>
+                                                    {order.product_name && order.product_name.length > 20
+                                                        ? order.product_name.substring(0, 20) + "..."
+                                                        : order.product_name || 'Unknown Product'}
                                                 </span>
                                             </div>
                                         </TableCell>

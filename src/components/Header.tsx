@@ -123,26 +123,31 @@ const Header = () => {
 
           {/* Right: Icons & Account (Desktop) */}
           <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
-            {/* Wishlist Button - Only for logged in users */}
-            {user && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link to="/wishlist" className="relative">
-                    <button className="relative p-2 hover:text-accent rounded-lg transition-colors">
-                      <Heart className="w-5 h-5" />
-                      {wishlistCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                          {wishlistCount}
-                        </span>
-                      )}
-                    </button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>My Wishlist</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {/* Contact Link */}
+            <Link to="/contact">
+              <Button variant="ghost" className="font-bold hover:bg-transparent hover:text-accent">
+                Contact Us
+              </Button>
+            </Link>
+
+            {/* Wishlist Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/wishlist" className="relative">
+                  <button className="relative p-2 hover:text-accent rounded-lg transition-colors">
+                    <Heart className="w-5 h-5" />
+                    {wishlistCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>My Wishlist</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Cart Button - Only for logged in users */}
             {user && (
@@ -218,11 +223,6 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/contact">
-                  <Button variant="ghost" className="font-bold hover:bg-transparent hover:text-accent">
-                    Contact Us
-                  </Button>
-                </Link>
                 <Link to="/auth">
                   <Button variant="outline" className="font-bold border-2 border-black bg-transparent text-black hover:bg-black hover:text-white transition-colors">
                     Login
@@ -299,16 +299,6 @@ const Header = () => {
                     <MessageCircle className="w-5 h-5" />
                     CONTACT US
                   </Link>
-                  {user && (
-                    <Link
-                      to="/order-history"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-bold tracking-wide hover:text-accent transition-colors py-2 flex items-center gap-2"
-                    >
-                      <Package className="w-5 h-5" />
-                      ORDER HISTORY
-                    </Link>
-                  )}
                   <Link
                     to="/wishlist"
                     onClick={() => setMobileMenuOpen(false)}
@@ -322,6 +312,16 @@ const Header = () => {
                       </span>
                     )}
                   </Link>
+                  {user && (
+                    <Link
+                      to="/order-history"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-lg font-bold tracking-wide hover:text-accent transition-colors py-2 flex items-center gap-2"
+                    >
+                      <Package className="w-5 h-5" />
+                      ORDER HISTORY
+                    </Link>
+                  )}
                   {user && (
                     <Link
                       to="/cart"

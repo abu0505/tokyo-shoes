@@ -19,10 +19,21 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  // Fetch wishlist from Supabase when user changes
+  // Fetch wishlist from Supabase or LocalStorage
   const fetchWishlist = useCallback(async () => {
     if (!user) {
-      setWishlistIds([]);
+      // Load from LocalStorage for guests
+      const stored = localStorage.getItem('wishlist_storage');
+      if (stored) {
+        try {
+          setWishlistIds(JSON.parse(stored));
+        } catch (e) {
+          console.error('Error parsing wishlist from local storage', e);
+          setWishlistIds([]);
+        }
+      } else {
+        setWishlistIds([]);
+      }
       setIsLoading(false);
       return;
     }
@@ -53,13 +64,19 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchWishlist]);
 
   const addToWishlist = useCallback(async (shoeId: string, shoeName?: string) => {
+    // Optimistic update
+    setWishlistIds(prev => {
+      const newIds = [...prev, shoeId];
+      if (!user) {
+        localStorage.setItem('wishlist_storage', JSON.stringify(newIds));
+      }
+      return newIds;
+    });
+
     if (!user) {
-      toast.error('Please login to add items to your wishlist');
+      toast.success(shoeName ? `Added ${shoeName} to wishlist` : 'Added to wishlist');
       return;
     }
-
-    // Optimistic update
-    setWishlistIds(prev => [...prev, shoeId]);
 
     try {
       const { error } = await supabase
@@ -89,10 +106,19 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const removeFromWishlist = useCallback(async (shoeId: string, shoeName?: string) => {
-    if (!user) return;
-
     // Optimistic update
-    setWishlistIds(prev => prev.filter(id => id !== shoeId));
+    setWishlistIds(prev => {
+      const newIds = prev.filter(id => id !== shoeId);
+      if (!user) {
+        localStorage.setItem('wishlist_storage', JSON.stringify(newIds));
+      }
+      return newIds;
+    });
+
+    if (!user) {
+      toast.success(shoeName ? `Removed ${shoeName} from wishlist` : 'Removed from wishlist');
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -117,17 +143,12 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const toggleWishlist = useCallback(async (shoeId: string, shoeName?: string) => {
-    if (!user) {
-      toast.error('Please login to manage your wishlist');
-      return;
-    }
-
     if (wishlistIds.includes(shoeId)) {
       await removeFromWishlist(shoeId, shoeName);
     } else {
       await addToWishlist(shoeId, shoeName);
     }
-  }, [user, wishlistIds, addToWishlist, removeFromWishlist]);
+  }, [wishlistIds, addToWishlist, removeFromWishlist]);
 
   const isInWishlist = useCallback((shoeId: string) => {
     return wishlistIds.includes(shoeId);
