@@ -28,11 +28,11 @@ export const useReviews = (shoeId?: string) => {
 
     try {
       setIsLoading(true);
-      
+
       // Fetch reviews from public view for privacy (no user_id exposed)
       const { data, error } = await supabase
-        .from('reviews_public')
-        .select('*')
+        .from('reviews_public' as any)
+        .select('id, shoe_id, rating, comment, created_at')
         .eq('shoe_id', shoeId)
         .order('created_at', { ascending: false });
 
@@ -42,7 +42,7 @@ export const useReviews = (shoeId?: string) => {
       }
 
       // Map to include reviewer_username (already in view)
-      const mappedReviews = (data || []).map(r => ({
+      const mappedReviews = ((data as any[]) || []).map(r => ({
         id: r.id,
         shoe_id: r.shoe_id,
         user_id: '', // Hidden for privacy
@@ -55,7 +55,7 @@ export const useReviews = (shoeId?: string) => {
 
       // Calculate stats
       if (data && data.length > 0) {
-        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+        const avg = (data as any[]).reduce((sum, r) => sum + r.rating, 0) / data.length;
         setStats({
           averageRating: avg,
           totalReviews: data.length
@@ -72,7 +72,7 @@ export const useReviews = (shoeId?: string) => {
           .eq('shoe_id', shoeId)
           .eq('user_id', user.id)
           .single();
-        
+
         setUserReview(myReviewData || null);
       }
     } catch (err) {
@@ -112,7 +112,7 @@ export const useShoeRatings = (shoeIds: string[]) => {
         setIsLoading(true);
         // Use public view for ratings (no user_id needed)
         const { data, error } = await supabase
-          .from('reviews_public')
+          .from('reviews_public' as any)
           .select('shoe_id, rating')
           .in('shoe_id', shoeIds);
 
@@ -123,7 +123,7 @@ export const useShoeRatings = (shoeIds: string[]) => {
 
         // Group by shoe_id and calculate averages
         const grouped: Record<string, number[]> = {};
-        data?.forEach(r => {
+        (data as any[])?.forEach(r => {
           if (!grouped[r.shoe_id]) {
             grouped[r.shoe_id] = [];
           }

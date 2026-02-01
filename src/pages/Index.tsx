@@ -30,7 +30,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shoes')
-        .select('*')
+        .select('id, name, brand, price, image_url, sizes, status, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
