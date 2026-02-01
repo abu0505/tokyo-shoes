@@ -11,7 +11,7 @@ This guide will walk you through setting up Google OAuth for your Supabase proje
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Click the project dropdown at the top left and select **New Project**.
-3. Name it `Tokyo Kicks Auth` (or similar) and click **Create**.
+3. Name it `Tokyo Shoes Auth` (or similar) and click **Create**.
 4. Select the new project from the notification or dropdown.
 
 ## Step 2: Configure OAuth Consent Screen
@@ -19,7 +19,7 @@ This guide will walk you through setting up Google OAuth for your Supabase proje
 1. In the search bar at the top, type "OAuth consent screen" and select it.
 2. Select **External** for User Type and click **Create**.
 3. Fill in the required fields:
-   - **App name**: `Tokyo Kicks Collection`
+   - **App name**: `Tokyo Shoes Collection`
    - **User support email**: Your email
    - **Developer contact information**: Your email
 4. Click **Save and Continue** until you reach the dashboard (you can skip Scopes and Test Users for now).

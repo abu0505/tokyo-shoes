@@ -37,12 +37,17 @@ const Footer = () => {
                   Shopping Cart
                 </Link>
               </li>
+              <li>
+                <Link to="/order-history" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Order History
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support & Legal */}
           <div className="text-left">
-            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">MY ACCOUNT</h3>
+            <h3 className="text-xs md:text-sm font-bold tracking-wide mb-3 md:mb-4 text-accent">MY ACCOUNT & LEGAL</h3>
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link to="/profile" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
@@ -50,13 +55,18 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/order-history" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Order History
+                <Link to="/contact" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Contact Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-                  Contact Us
+                <Link to="/privacy" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+                  Terms of Service
                 </Link>
               </li>
             </ul>

@@ -1,5 +1,5 @@
 -- ============================================
--- TOKYO KICKS COLLECTION - DATABASE SETUP
+-- TOKYO SHOES COLLECTION - DATABASE SETUP
 -- ============================================
 -- Run this script in your Supabase SQL Editor
 -- Dashboard > SQL Editor > New Query

@@ -218,18 +218,37 @@ const ProductDetail = () => {
       transition={{ duration: 0.3 }}
     >
       <Helmet>
-        <title>{shoe.name} | Tokyo Kicks</title>
-        <meta name="description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)}. ${shoe.brand} - Available now at Tokyo Kicks.`} />
-        <meta property="og:title" content={`${shoe.name} | Tokyo Kicks`} />
-        <meta property="og:description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)} at Tokyo Kicks.`} />
+        <title>{shoe.name} | Tokyo Shoes</title>
+        <meta name="description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)}. ${shoe.brand} - Available now at Tokyo Shoes.`} />
+        <meta property="og:title" content={`${shoe.name} | Tokyo Shoes`} />
+        <meta property="og:description" content={`Buy ${shoe.name} for ${formatPrice(shoe.price)} at Tokyo Shoes.`} />
         <meta property="og:image" content={shoe.image} />
         <meta property="og:url" content={window.location.href} />
         <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": shoe.name,
+            "image": shoe.image,
+            "description": `Buy ${shoe.name} - ${shoe.brand}`,
+            "brand": {
+              "@type": "Brand",
+              "name": shoe.brand
+            },
+            "offers": {
+              "@type": "Offer",
+              "priceCurrency": "INR",
+              "price": shoe.price,
+              "availability": isSoldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+            }
+          })}
+        </script>
       </Helmet>
       <Header />
 
       <motion.main
-        className="container py-6 md:py-8 px-4"
+        className="container py-5 md:py-5 px-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}

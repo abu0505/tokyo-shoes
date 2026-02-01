@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import TextLoader from '@/components/TextLoader';
 import { useAdminShoe } from '@/hooks/useAdminInventory';
 import AdminLayout from '@/components/admin/AdminLayout';
+import imageCompression from 'browser-image-compression';
 
 const shoeSchema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -100,7 +101,7 @@ const AddEditShoe = () => {
     }, [shoe, reset]);
 
     // Image validation constants
-    const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit before compression
     const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     const MIME_TO_EXT: Record<string, string> = {
         'image/jpeg': 'jpg',
@@ -179,20 +180,38 @@ const AddEditShoe = () => {
 
 
     const uploadImage = async (file: File): Promise<string | null> => {
+        // Re-validate before upload
         const validationError = validateImageFile(file);
         if (validationError) {
             toast.error(validationError);
             return null;
         }
 
-        const fileExt = MIME_TO_EXT[file.type] || 'jpg';
+        // Compression
+        const options = {
+            maxSizeMB: 0.1,
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+            fileType: "image/webp"
+        };
+
+        let fileToUpload = file;
+        try {
+            console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+            fileToUpload = await imageCompression(file, options);
+            console.log(`Compressed size: ${fileToUpload.size / 1024 / 1024} MB`);
+        } catch (error) {
+            console.warn("Compression failed, falling back to original:", error);
+        }
+
+        const fileExt = fileToUpload.type === 'image/webp' ? 'webp' : (MIME_TO_EXT[fileToUpload.type] || 'jpg');
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `shoes/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
             .from('shoe-images')
-            .upload(filePath, file, {
-                contentType: file.type,
+            .upload(filePath, fileToUpload, {
+                contentType: fileToUpload.type,
             });
 
         if (uploadError) {

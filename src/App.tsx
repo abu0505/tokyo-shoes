@@ -25,6 +25,8 @@ import Payment from "./pages/Payment";
 import OrderHistory from "./pages/OrderHistory";
 import OrderDetails from "./pages/OrderDetails";
 import ScrollToTop from "./components/ScrollToTop";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 
 import { HelmetProvider } from 'react-helmet-async';
@@ -61,6 +63,8 @@ const App = () => (
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/order/:id" element={<OrderDetails />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

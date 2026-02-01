@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TextLoader from '@/components/TextLoader';
@@ -58,16 +59,25 @@ const Contact = () => {
 
         setIsSubmitting(true);
 
-        // Simulate form submission
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            const { error } = await supabase.functions.invoke('send-contact-message', {
+                body: { ...formData }
+            });
 
-        // Set rate limit
-        localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
+            if (error) throw error;
 
-        toast.success('Message sent successfully! We\'ll get back to you soon.');
-        setFormData({ name: '', email: '', subject: '', message: '' });
-        setHoneypot('');
-        setIsSubmitting(false);
+            // Set rate limit
+            localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
+
+            toast.success('Message sent successfully! We\'ll get back to you soon.');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+            setHoneypot('');
+        } catch (error) {
+            console.error('Error sending message:', error);
+            toast.error("Failed to send message. Please try again later.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const toggleFAQ = (index: number) => {

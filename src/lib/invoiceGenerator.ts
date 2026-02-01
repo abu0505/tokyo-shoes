@@ -28,6 +28,7 @@ export interface OrderData {
     shippingCost: number;
     // tax: number; // Removed
     discountCode?: string;
+    discountAmount?: number; // Added
     total: number;
     paymentMethod?: string;
 }
@@ -70,7 +71,7 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(24);
         doc.setFont("helvetica", "bold");
-        doc.text("TOKYO KICKS", 20, 25);
+        doc.text("TOKYO SHOES", 20, 25);
 
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
@@ -80,7 +81,7 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
         doc.setTextColor(textColor);
         doc.setFontSize(18);
         doc.setFont("helvetica", "bold");
-        doc.text("INVOICE", 150, 60, { align: "right" });
+        doc.text("INVOICE", 190, 60, { align: "right" });
 
         // Order Details
         doc.setFontSize(10);
@@ -93,9 +94,9 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
             day: "numeric",
         });
 
-        doc.text(`Order: #${order.orderCode}`, 150, 68, { align: "right" });
-        doc.text(`Date: ${orderDate}`, 150, 75, { align: "right" });
-        doc.text(`Status: ${order.status}`, 150, 82, { align: "right" });
+        doc.text(`Order: #${order.orderCode}`, 190, 68, { align: "right" });
+        doc.text(`Date: ${orderDate}`, 190, 75, { align: "right" });
+        doc.text(`Status: ${order.status}`, 190, 82, { align: "right" });
 
         // Billing Information
         doc.setTextColor(textColor);
@@ -173,8 +174,8 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
                 1: { cellWidth: 45 },
                 2: { cellWidth: 30 },
                 3: { cellWidth: 15, halign: "center" },
-                4: { cellWidth: 25, halign: "right" },
-                5: { cellWidth: 25, halign: "right" },
+                4: { cellWidth: 35, halign: "right" }, // Increased width
+                5: { cellWidth: 35, halign: "right" }, // Increased width
             },
             alternateRowStyles: {
                 fillColor: [249, 250, 251],
@@ -226,13 +227,15 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
 
 
         // Discount (if applicable)
-        if (order.discountCode) {
+        if (order.discountAmount && order.discountAmount > 0) {
             summaryY += 8;
             doc.setTextColor(34, 197, 94); // Green
-            doc.text(`Discount (${order.discountCode}):`, 120, summaryY);
-            // In a real app calculations should be safer, but this follows previous implementation
-            const discountAmount = order.subtotal * 0.1;
-            doc.text(`-Rs.${discountAmount.toFixed(2)}`, 190, summaryY, { align: "right" });
+            const codeText = order.discountCode ? ` (${order.discountCode})` : "";
+            doc.text(`Discount${codeText}:`, 120, summaryY);
+            doc.text(`-Rs.${order.discountAmount.toFixed(2)}`, 190, summaryY, { align: "right" });
+        } else if (order.discountCode) {
+            // Fallback if code exists but amount is 0 (shouldn't happen with new logic, but safe to keep or remove)
+            // Keeping it consistent with previous logic if something fails, but ideally we rely on discountAmount
         }
 
         // Total
@@ -266,11 +269,11 @@ export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResul
 
         doc.setFontSize(8);
         doc.setTextColor(mutedColor);
-        doc.text("Thank you for shopping with Tokyo Kicks!", 105, pageHeight - 18, {
+        doc.text("Thank you for shopping with Tokyo Shoes!", 105, pageHeight - 18, {
             align: "center",
         });
         doc.text(
-            "For questions or concerns, please contact support@tokyokicks.com",
+            "For questions or concerns, please contact support@tokyoshoes.com",
             105,
             pageHeight - 12,
             { align: "center" }

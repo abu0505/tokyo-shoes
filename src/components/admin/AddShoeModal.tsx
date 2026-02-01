@@ -164,7 +164,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
 
     // Compression
     const options = {
-      maxSizeMB: 0.3,
+      maxSizeMB: 0.1,
       maxWidthOrHeight: 1024,
       useWebWorker: true,
       fileType: "image/webp"

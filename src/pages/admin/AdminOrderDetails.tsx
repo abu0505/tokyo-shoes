@@ -12,6 +12,7 @@ import {
     Copy,
     Ruler,
     Phone,
+    Pencil,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ import { toast } from 'sonner';
 import { generateInvoicePDF, OrderData, InvoiceResult } from '@/lib/invoiceGenerator';
 import InvoicePreviewModal from '@/components/InvoicePreviewModal';
 import TextLoader from '@/components/TextLoader';
+import EditOrderDialog from '@/components/admin/EditOrderDialog';
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string; color: string }[] = [
     { value: 'pending', label: 'Pending', color: 'bg-yellow-500' },
@@ -72,6 +74,7 @@ const AdminOrderDetails = () => {
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceResult | null>(null);
     const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Handle print invoice
     const handlePrintInvoice = async () => {
@@ -103,6 +106,7 @@ const AdminOrderDetails = () => {
             shippingCost: order.shipping_cost,
             // tax: order.tax, // Removed
             discountCode: order.discount_code || undefined,
+            discountAmount: order.subtotal + order.shipping_cost - order.total, // Added calculation
             total: order.total,
             paymentMethod: order.payment_method || undefined,
         };
@@ -356,7 +360,19 @@ const AdminOrderDetails = () => {
                         <Card className="bg-white border border-[#e6dbdc] rounded-2xl shadow-sm">
                             <CardHeader className="flex flex-row items-center justify-between pb-4">
                                 <CardTitle className="text-foreground font-bold text-base">Shipping Address</CardTitle>
-                                <MapPin className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
+                                    {!isLoading && order && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                            onClick={() => setIsEditModalOpen(true)}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {isLoading ? (
@@ -373,6 +389,7 @@ const AdminOrderDetails = () => {
                                                 <p className="font-bold text-foreground">{order?.first_name} {order?.last_name}</p>
                                                 <p className="text-sm text-muted-foreground">{order?.address}</p>
                                                 {order?.apartment && <p className="text-sm text-muted-foreground">{order?.apartment}</p>}
+                                                <p className="text-sm text-muted-foreground">{order?.city}, {order?.postal_code}</p>
                                             </div>
                                         </div>
                                     </>
@@ -391,6 +408,15 @@ const AdminOrderDetails = () => {
                 onDownload={invoiceData?.download || (() => { })}
                 orderCode={order?.order_code || 'N/A'}
             />
+
+            {/* Edit Order Modal */}
+            {order && (
+                <EditOrderDialog
+                    open={isEditModalOpen}
+                    onOpenChange={setIsEditModalOpen}
+                    order={order}
+                />
+            )}
         </AdminLayout>
     );
 };

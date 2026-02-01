@@ -193,6 +193,7 @@ const OrderDetails = () => {
             shippingCost: order.shipping_cost,
             // tax: order.tax, // Removed from interface
             discountCode: order.discount_code || undefined,
+            discountAmount: order.subtotal + order.shipping_cost - order.total, // Added calculation
             total: order.total,
             paymentMethod: order.payment_method || undefined,
         };
