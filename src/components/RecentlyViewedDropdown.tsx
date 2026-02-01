@@ -91,7 +91,6 @@ const RecentlyViewedDropdown = ({
         sideOffset={8}
         style={{
           top: '0px',
-          transform: 'translate(150px, 60px)',
           minWidth: 'max-content'
         }}
       >

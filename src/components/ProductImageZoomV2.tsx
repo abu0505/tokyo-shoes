@@ -80,7 +80,7 @@ const ProductImageZoomV2 = ({ src, alt, className = '' }: ProductImageZoomV2Prop
             <div
                 id="image-zoom-container"
                 ref={containerRef}
-                className={`relative ${isMobile ? '' : 'cursor-crosshair'}`}
+                className={`relative rounded-lg overflow-hidden ${isMobile ? '' : 'cursor-crosshair'}`}
                 onMouseMove={handleMouseMove}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}

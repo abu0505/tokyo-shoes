@@ -25,6 +25,7 @@ import { DbShoe } from '@/types/database';
 import { toast } from 'sonner';
 import TextLoader from '../TextLoader';
 import { ShoeWithSizes } from '@/hooks/useAdminInventory';
+import imageCompression from 'browser-image-compression';
 
 const shoeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -161,16 +162,34 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
       return null;
     }
 
+    // Compression
+    const options = {
+      maxSizeMB: 0.3,
+      maxWidthOrHeight: 1024,
+      useWebWorker: true,
+      fileType: "image/webp"
+    };
+
+    let fileToUpload = file;
+    try {
+      console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+      fileToUpload = await imageCompression(file, options);
+      console.log(`Compressed size: ${fileToUpload.size / 1024 / 1024} MB`);
+    } catch (error) {
+      console.warn("Compression failed, falling back to original:", error);
+    }
+
     // Use MIME type to determine extension (not filename)
-    const fileExt = MIME_TO_EXT[file.type] || 'jpg';
+    // Force webp extension if compressed, otherwise fallback
+    const fileExt = fileToUpload.type === 'image/webp' ? 'webp' : (MIME_TO_EXT[fileToUpload.type] || 'jpg');
     // Use crypto.randomUUID for secure, unpredictable filenames
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `shoes/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('shoe-images')
-      .upload(filePath, file, {
-        contentType: file.type, // Explicitly set content type
+      .upload(filePath, fileToUpload, {
+        contentType: fileToUpload.type, // Explicitly set content type
       });
 
     if (uploadError) {
@@ -526,7 +545,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
                 className="col-span-4 bg-accent text-accent-foreground hover:bg-accent/90 font-bold"
               >
                 {saveMutation.isPending || isUploading
-                  ? <TextLoader text="Saving" isWhite />
+                  ? <TextLoader text="Uploading..." isWhite />
                   : isEditing
                     ? 'Update Shoe'
                     : 'Add Shoe'}

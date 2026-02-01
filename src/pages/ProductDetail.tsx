@@ -86,6 +86,23 @@ const ProductDetail = () => {
   });
 
   const isWishlisted = shoe ? isInWishlist(shoe.id) : false;
+  const isNew = shoe ? isNewArrival(shoe) : false;
+  const isSoldOut = shoe ? shoe.status === 'sold_out' : false;
+
+  // Combine main image and additional images for the carousel
+  const allImages = shoe
+    ? [shoe.image, ...(shoe.additionalImages || [])].filter(Boolean)
+    : [];
+
+  const currentImage = allImages[currentImageIndex] || '';
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   // Scroll to top on mount
   useEffect(() => {
@@ -104,60 +121,21 @@ const ProductDetail = () => {
     setCurrentImageIndex(0);
   }, [id]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <TextLoader className="text-2xl" />
-      </div>
-    );
-  }
-
-  if (!shoe) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-6xl mb-6">🔍</p>
-          <h2 className="text-3xl font-bold mb-4">SHOE NOT FOUND</h2>
-          <p className="text-muted-foreground mb-8">
-            The shoe you're looking for doesn't exist or has been removed.
-          </p>
-          <Button
-            onClick={() => navigate('/')}
-            className="bg-foreground text-background hover:bg-foreground/90 px-8 py-6 font-bold"
-          >
-            BACK TO CATALOG
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const isNew = isNewArrival(shoe);
-  const isSoldOut = shoe.status === 'sold_out';
-
-  // Combine main image and additional images for the carousel
-  const allImages = [shoe.image, ...(shoe.additionalImages || [])].filter(Boolean);
-  const currentImage = allImages[currentImageIndex] || '';
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
-
   // Preload all images for better performance
   useEffect(() => {
-    allImages.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
+    if (allImages.length > 0) {
+      allImages.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      });
+    }
   }, [allImages]);
 
 
   const handleWishlistClick = () => {
-    toggleWishlist(shoe.id, shoe.name);
+    if (shoe) {
+      toggleWishlist(shoe.id, shoe.name);
+    }
   };
 
   const handleRelatedWishlistClick = (relatedShoe: Shoe) => {
@@ -191,6 +169,7 @@ const ProductDetail = () => {
   };
 
   const handleShare = async () => {
+    if (!shoe) return;
     if (navigator.share) {
       await navigator.share({
         title: shoe.name,
@@ -202,6 +181,34 @@ const ProductDetail = () => {
       toast.success('Link copied to clipboard!');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <TextLoader className="text-2xl" />
+      </div>
+    );
+  }
+
+  if (!shoe) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-6xl mb-6">🔍</p>
+          <h2 className="text-3xl font-bold mb-4">SHOE NOT FOUND</h2>
+          <p className="text-muted-foreground mb-8">
+            The shoe you're looking for doesn't exist or has been removed.
+          </p>
+          <Button
+            onClick={() => navigate('/')}
+            className="bg-foreground text-background hover:bg-foreground/90 px-8 py-6 font-bold"
+          >
+            BACK TO CATALOG
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -241,7 +248,7 @@ const ProductDetail = () => {
           {/* Image Section with Gallery */}
           <div className="flex flex-col-reverse md:flex-row gap-4 w-full">
             {/* Thumbnails - Desktop Only */}
-            <div className="hidden md:flex flex-col gap-4 w-20 lg:w-24 shrink-0 h-fit max-h-[600px] overflow-y-auto pr-1">
+            <div className="hidden md:flex flex-col gap-4 w-14 lg:w-16 shrink-0 h-fit max-h-[600px] overflow-y-auto pr-1">
               {allImages.map((img, idx) => (
                 <button
                   key={idx}
@@ -262,7 +269,7 @@ const ProductDetail = () => {
 
             {/* Main Image Display */}
             <div className="relative group flex-1">
-              <div className="aspect-square border-2 border-foreground bg-secondary relative overflow-hidden rounded-lg">
+              <div className="aspect-square border-2 border-foreground bg-secondary relative rounded-lg">
                 {/* Animated Image Transition */}
                 <AnimatePresence mode="wait">
                   <motion.div
