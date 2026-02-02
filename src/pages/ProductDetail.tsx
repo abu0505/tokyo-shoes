@@ -176,7 +176,6 @@ const ProductDetail = () => {
     if (!shoe) return;
 
     // Construct the share URL using our Edge Function
-    // This allows bots to see the correct image/meta tags before redirecting to the app
     const baseUrl = 'https://qdbvxznnzukdwooziqmd.supabase.co/functions/v1/share-product';
     const params = new URLSearchParams({
       id: shoe.id,
@@ -184,15 +183,28 @@ const ProductDetail = () => {
     });
     const shareUrl = `${baseUrl}?${params.toString()}`;
 
-    if (navigator.share) {
-      await navigator.share({
-        title: shoe.name,
-        text: `Check out ${shoe.name} at TOKYO!`,
-        url: shareUrl,
-      });
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success('Link copied to clipboard!');
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shoe.name,
+          text: `Check out ${shoe.name} at TOKYO!`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback to clipboard if share fails (and it wasn't just a user cancellation)
+      if (error instanceof Error && error.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          toast.success('Link copied to clipboard!');
+        } catch (clipboardError) {
+          toast.error('Could not share link');
+        }
+      }
     }
   };
 
@@ -393,7 +405,7 @@ const ProductDetail = () => {
                   size="icon"
                   variant="secondary"
                   onClick={handleShare}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground bg-background hover:bg-foreground hover:text-background active:scale-95 transition-all text-foreground"
                 >
                   <Share2 className="h-4 w-4 md:h-5 md:w-5" />
                 </Button>

@@ -51,7 +51,13 @@ Deno.serve(async (req) => {
 
         const title = `${shoe.name} | Tokyo Shoes`
         const description = `Buy ${shoe.name} for ${price}. ${shoe.brand} - Available now at Tokyo Shoes.`
-        const image = shoe.image_url
+
+        // Optimize image (attempt to resize if using Supabase Storage)
+        const image = `${shoe.image_url}?width=1200&quality=80&resize=contain`
+
+        // IMPORTANT: Set og:url to THIS Edge Function URL, not the app URL.
+        // Otherwise scrapers might follow the redirect/canonical and miss these tags.
+        const currentUrl = url.href
 
         const html = `
       <!DOCTYPE html>
@@ -64,14 +70,14 @@ Deno.serve(async (req) => {
         
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
-        <meta property="og:url" content="${redirectUrl}">
+        <meta property="og:url" content="${currentUrl}">
         <meta property="og:title" content="${title}">
         <meta property="og:description" content="${description}">
         <meta property="og:image" content="${image}">
         
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="${redirectUrl}">
+        <meta property="twitter:url" content="${currentUrl}">
         <meta property="twitter:title" content="${title}">
         <meta property="twitter:description" content="${description}">
         <meta property="twitter:image" content="${image}">
@@ -88,7 +94,11 @@ Deno.serve(async (req) => {
     `
 
         return new Response(html, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+            headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/html',
+                'Cache-Control': 'public, max-age=3600, s-maxage=7200'
+            },
         })
 
     } catch (error) {
