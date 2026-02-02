@@ -1,112 +1,76 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-ignore
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-Deno.serve(async (req) => {
-    // Handle CORS preflight requests
+serve(async (req: Request) => {
+    // Handle CORS Preflight Request
     if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders })
-    }
-
-    const url = new URL(req.url)
-    const id = url.searchParams.get('id')
-    const redirectUrl = url.searchParams.get('redirectUrl')
-
-    if (!id || !redirectUrl) {
-        return new Response('Missing id or redirectUrl parameters', {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'text/plain' }
-        })
+        return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-        )
+        // Initialize Supabase Client
+        // @ts-ignore
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        // @ts-ignore
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        const supabase = createClient(supabaseUrl, supabaseKey)
 
-        const { data: shoe, error } = await supabaseClient
-            .from('shoes')
-            .select('*')
-            .eq('id', id)
-            .single()
+        // Parse Request Body
+        const { productId } = await req.json()
 
-        if (error || !shoe) {
-            console.error('Error fetching shoe:', error)
-            // Fallback to direct redirect if product not found
-            return new Response(null, {
-                status: 302,
-                headers: { ...corsHeaders, 'Location': redirectUrl }
-            })
+        if (!productId) {
+            throw new Error('Product ID is required')
         }
 
-        const price = new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0,
-        }).format(shoe.price)
+        // Fetch Product Details
+        const { data: product, error: dbError } = await supabase
+            .from('shoes')
+            .select('*')
+            .eq('id', productId)
+            .single()
 
-        const title = `${shoe.name} | Tokyo Shoes`
-        const description = `Buy ${shoe.name} for ${price}. ${shoe.brand} - Available now at Tokyo Shoes.`
+        if (dbError || !product) {
+            return new Response(
+                JSON.stringify({ error: 'Product not found' }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 404,
+                }
+            )
+        }
 
-        // Optimize image (attempt to resize if using Supabase Storage)
-        const image = `${shoe.image_url}?width=1200&quality=80&resize=contain`
+        // Generate Share Data
+        const origin = req.headers.get('origin') || 'https://tokyo-shoes.vercel.app'
+        const shareUrl = `${origin}/product/${product.id}`
+        const shareText = `Check out these ${product.name} at Tokyo Shoes!`
 
-        // IMPORTANT: Set og:url to THIS Edge Function URL, not the app URL.
-        // Otherwise scrapers might follow the redirect/canonical and miss these tags.
-        const currentUrl = url.href
+        return new Response(
+            JSON.stringify({
+                url: shareUrl,
+                text: shareText,
+                title: product.name
+            }),
+            {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            }
+        )
 
-        const html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
-        <meta name="description" content="${description}">
-        
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="${currentUrl}">
-        <meta property="og:title" content="${title}">
-        <meta property="og:description" content="${description}">
-        <meta property="og:image" content="${image}">
-        
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="${currentUrl}">
-        <meta property="twitter:title" content="${title}">
-        <meta property="twitter:description" content="${description}">
-        <meta property="twitter:image" content="${image}">
-        
-        <script>
-          // Immediate redirect for real users
-          window.location.href = "${redirectUrl}";
-        </script>
-      </head>
-      <body>
-        <p>Redirecting to <a href="${redirectUrl}">${title}</a>...</p>
-      </body>
-      </html>
-    `
-
-        return new Response(html, {
-            headers: {
-                ...corsHeaders,
-                'Content-Type': 'text/html',
-                'Cache-Control': 'public, max-age=3600, s-maxage=7200'
-            },
-        })
-
-    } catch (error) {
-        console.error('Error:', error)
-        // Fallback to direct redirect on error
-        return new Response(null, {
-            status: 302,
-            headers: { ...corsHeaders, 'Location': redirectUrl }
-        })
+    } catch (error: any) {
+        return new Response(
+            JSON.stringify({ error: error.message }),
+            {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 400,
+            }
+        )
     }
 })
