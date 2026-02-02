@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { getRandomColor } from '@/lib/colors';
 import Header from '@/components/Header';
 import { Database } from '@/types/database';
@@ -214,6 +215,9 @@ const Profile = () => {
 
     return (
         <div className="min-h-screen bg-gray-200/50">
+            <Helmet>
+                <title>My Profile | Tokyo Shoes</title>
+            </Helmet>
             <Header />
             <div className="container mx-auto py-12 px-4 md:px-6">
                 <div className="max-w-4xl mx-auto">

@@ -65,7 +65,7 @@ const RelatedProducts = ({ currentShoe, onWishlistClick, wishlistIds }: RelatedP
   return (
     <section className="py-10 md:py-16 border-t-2 border-foreground/10">
       <div className="container px-2">
-        <h2 className="text-2xl md:text-3xl font-black mb-6 md:mb-8 tracking-tight">
+        <h2 className="text-xl md:text-3xl font-black mb-6 md:mb-8 tracking-tight">
           YOU MAY ALSO LIKE
         </h2>
 

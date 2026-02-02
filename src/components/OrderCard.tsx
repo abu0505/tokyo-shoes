@@ -45,10 +45,9 @@ export interface Order {
 
 interface OrderCardProps {
     order: Order;
-    onBuyAgain: () => void;
 }
 
-const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
+const OrderCard = ({ order }: OrderCardProps) => {
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceResult | null>(null);
 
@@ -128,14 +127,11 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
         }, 500);
     };
 
-    const handleTrackOrder = () => {
-        // Logic for tracking
-        toast.info("Tracking functionality coming soon!");
-    };
+
 
     return (
         <>
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
                 {/* Top Row: Order ID + Status | View Invoice */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
                     <div className="flex flex-wrap items-center gap-3">
@@ -143,7 +139,7 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
                             Order #{order.order_code || "N/A"}
                         </h3>
                         <div className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full ${statusConfig.bgColor} ${statusConfig.textColor}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.iconColor.replace('text-', 'bg-')}`} />
+                            <statusConfig.icon className={`w-3.5 h-3.5 ${statusConfig.textColor}`} strokeWidth={3} />
                             {statusConfig.label.toUpperCase()}
                         </div>
                     </div>
@@ -195,16 +191,6 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                        {isShipped && (
-                            <Button
-                                onClick={handleTrackOrder}
-                                variant="outline"
-                                className="flex-1 md:flex-none font-bold rounded-lg h-10 border-gray-200 gap-2"
-                            >
-                                <Truck className="h-4 w-4" />
-                                Track Order
-                            </Button>
-                        )}
                         {!isCancelled && !isShipped && !isDelivered && (
                             <Button
                                 variant="outline"
@@ -217,12 +203,15 @@ const OrderCard = ({ order, onBuyAgain }: OrderCardProps) => {
                             </Button>
                         )}
 
-                        {/* Always show Buy Again for all history items as requested */}
+                        {/* Always show Track Order instead of Buy Again */}
                         <Button
-                            onClick={onBuyAgain}
-                            className="flex-1 md:flex-none font-bold rounded-lg h-10 bg-[#EF233C] text-white hover:bg-black transition-colors"
+                            asChild
+                            className="flex-1 md:flex-none font-bold rounded-lg h-10 bg-black text-white hover:bg-gray-800 transition-colors"
                         >
-                            Buy Again
+                            <Link to={`/track-order/${order.id}`}>
+                                <Truck className="h-4 w-4 mr-2" />
+                                Track Order
+                            </Link>
                         </Button>
                     </div>
                 </div>

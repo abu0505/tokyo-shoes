@@ -100,7 +100,7 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
       sizes: shoe.sizes,
       status: shoe.status,
       created_at: shoe.createdAt.toISOString(),
-      updated_at: shoe.createdAt.toISOString()
+      updated_at: shoe.updatedAt?.toISOString() || shoe.createdAt.toISOString()
     };
     setQuickViewShoe(dbShoe);
   };
@@ -137,7 +137,7 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
 
   return (
     <>
-      <section className="py-8 bg-background">
+      <section className="py-5 md:py-8 bg-background">
         <div className="container px-1">
           {/* Results count */}
           <div className="flex items-center justify-between mb-6 md:mb-8">
@@ -184,7 +184,7 @@ const ShoeCatalog = ({ shoes, onWishlistClick, wishlistIds }: ShoeCatalogProps) 
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="mt-10">
+            <div className="mt-6 mb-4 md:mt-10 md:mb-10">
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>

@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RecentlyViewedDropdownProps {
   recentlyViewedIds: string[];
@@ -23,6 +24,7 @@ const RecentlyViewedDropdown = ({
   onRemoveItem,
   onClearAll
 }: RecentlyViewedDropdownProps) => {
+  const isMobile = useIsMobile();
   const { data: recentShoes = [] } = useQuery({
     queryKey: ['recently-viewed-dropdown', recentlyViewedIds],
     queryFn: async () => {
@@ -86,12 +88,13 @@ const RecentlyViewedDropdown = ({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="recently-viewed-popover p-0 border-2 border-foreground bg-background"
-        align="start"
+        className="recently-viewed-popover p-0 border-2 border-foreground bg-background z-[100]"
+        align={isMobile ? "end" : "start"}
+        alignOffset={isMobile ? -4 : 0}
         sideOffset={8}
         style={{
-          top: '0px',
-          minWidth: 'max-content'
+          minWidth: isMobile ? '280px' : 'max-content',
+          maxWidth: isMobile ? 'calc(100vw - 40px)' : 'none'
         }}
       >
         <div className="p-3 border-b-2 border-foreground flex items-center justify-between">

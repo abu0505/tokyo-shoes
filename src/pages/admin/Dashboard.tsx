@@ -101,14 +101,14 @@ const AdminDashboard = () => {
   return (
     <AdminLayout
       header={
-        <header className="h-20 shrink-0 bg-white border-b border-border px-8 flex items-center justify-between">
+        <header className="h-20 shrink-0 bg-white border-b border-border px-4 md:px-8 flex items-center justify-between">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-black tracking-tight actions uppercase">Dashboard Overview</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-black tracking-tight actions uppercase">Dashboard Overview</h2>
             <p className="text-xs text-muted-foreground">Monitor your inventory at a glance</p>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/admin/inventory">
-              <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-accent hover:bg-accent/90 text-white text-sm font-bold transition-all shadow-md shadow-accent/30">
+              <button className="h-10 px-2 md:px-4 flex items-center justify-center gap-1 md:gap-2 bg-accent hover:bg-accent/90 text-white text-sm font-bold transition-all shadow-md shadow-accent/30">
                 <Plus className="h-5 w-5" />
                 Add Shoe
               </button>
@@ -152,13 +152,13 @@ const AdminDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.4 }}
-          className="bg-white border border-border rounded-2xl shadow-sm p-6"
+          className="bg-white border border-border rounded-2xl shadow-sm p-3 md:p-6"
         >
           <div className="flex items-center gap-2 mb-2 px-2">
             <Clock className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-xl font-black">Recent Activity</h2>
           </div>
-          <p className="text-sm text-muted-foreground mb-6 px-2">
+          <p className="text-sm text-muted-foreground mb-4 md:mb-6 px-2">
             Last 10 updates to the inventory.
           </p>
 

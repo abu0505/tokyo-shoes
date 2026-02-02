@@ -114,15 +114,15 @@ const Inventory = () => {
   return (
     <AdminLayout
       header={
-        <header className="h-20 shrink-0 bg-white border-b border-border px-8 flex items-center justify-between">
+        <header className="h-20 shrink-0 bg-white border-b border-border px-2 md:px-8 flex items-center justify-between">
           <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-black tracking-tight actions uppercase">Inventory Management</h2>
-            <p className="text-xs text-muted-foreground">View and manage your shoe inventory</p>
+            <h2 className="text-lg md:text-2xl font-bold text-black tracking-tight actions uppercase">Inventory Management</h2>
+            <p className="text-xs md:text-sm text-muted-foreground">View and manage your shoe inventory</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/admin/inventory/add')}
-              className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-accent hover:bg-accent/90 text-white text-sm font-bold transition-all shadow-md shadow-accent/30"
+              className="h-10 px-2 md:px-4 flex items-center justify-center gap-1 md:gap-2 rounded-lg bg-accent hover:bg-accent/90 text-white text-sm font-bold transition-all shadow-md shadow-accent/30"
             >
               <Plus className="h-5 w-5" />
               Add Shoe
@@ -140,10 +140,10 @@ const Inventory = () => {
           transition={{ duration: 0.3, delay: 0.2 }}
           className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden"
         >
-          <Table>
+          <Table wrapperClassName="scrollbar-hide">
             <TableHeader>
               <TableRow className="border-b border-border bg-neutral-50/50 hover:bg-neutral-50/50">
-                <TableHead className="font-bold">Name</TableHead>
+                <TableHead className="font-bold min-w-[180px] md:min-w-0">Name</TableHead>
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="font-bold">Price</TableHead>
                 <TableHead className="font-bold">Sizes</TableHead>
@@ -174,7 +174,7 @@ const Inventory = () => {
                     style={{ display: 'table-row' }}
                   >
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3">
                         {shoe.image_url ? (
                           <img
                             src={shoe.image_url}
@@ -186,9 +186,21 @@ const Inventory = () => {
                             📦
                           </div>
                         )}
-                        <div>
-                          <p className="text-xs text-muted-foreground">{shoe.brand}</p>
-                          <p className="font-bold">{shoe.name}</p>
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70 mb-0.5">{shoe.brand}</p>
+                          <p className="font-bold text-sm leading-tight" title={shoe.name}>
+                            {(() => {
+                              const words = shoe.name.split(' ');
+                              if (words.length <= 4) return shoe.name;
+                              return (
+                                <>
+                                  {words.slice(0, 4).join(' ')}
+                                  <br />
+                                  {words.slice(4).join(' ')}
+                                </>
+                              );
+                            })()}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -227,9 +239,9 @@ const Inventory = () => {
                                   {shoe.shoe_sizes
                                     .sort((a, b) => a.size - b.size)
                                     .map((sizeObj) => (
-                                      <div key={sizeObj.id} className="flex justify-between items-center">
+                                      <div key={sizeObj.id} className="flex items-center">
                                         <span className="text-muted-foreground">Size {sizeObj.size}:</span>
-                                        <span className={sizeObj.quantity === 0 ? "text-red-500 font-bold" : "font-bold"}>
+                                        <span className={sizeObj.quantity === 0 ? "text-red-500 font-bold" : "font-bold pl-2"}>
                                           {sizeObj.quantity} left
                                         </span>
                                       </div>

@@ -5,9 +5,10 @@ interface ProductImageZoomV2Props {
     src: string;
     alt: string;
     className?: string;
+    onClick?: () => void;
 }
 
-const ProductImageZoomV2 = ({ src, alt, className = '' }: ProductImageZoomV2Props) => {
+const ProductImageZoomV2 = ({ src, alt, className = '', onClick }: ProductImageZoomV2Props) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
     const isMobile = useIsMobile();
@@ -84,6 +85,7 @@ const ProductImageZoomV2 = ({ src, alt, className = '' }: ProductImageZoomV2Prop
                 onMouseMove={handleMouseMove}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
+                onClick={onClick}
             >
                 {/* Product Image */}
                 <img

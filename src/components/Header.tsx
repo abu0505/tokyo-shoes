@@ -74,8 +74,8 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-background/80 backdrop-blur-md backdrop-saturate-150 border-b-2 border-foreground py-3 md:py-4 sticky top-0 z-50">
-        <div className="container flex items-center justify-between relative min-h-[46px]">
+      <header className="bg-background/60 backdrop-blur-md backdrop-saturate-150 border-b border-foreground/20 py-3 md:py-4 sticky top-0 z-50 shadow-sm transition-all duration-300">
+        <div className="container flex items-center justify-between relative min-h-[46px] px-5">
           {/* Left: Catalog & Recent (Desktop) */}
           <div className="hidden md:flex items-center gap-6 flex-1 justify-start">
             <a
@@ -266,7 +266,7 @@ const Header = () => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] bg-background border-l-2 border-foreground">
+              <SheetContent side="right" className="w-[280px] bg-background/60 backdrop-blur-md border-l border-foreground/20">
                 <SheetHeader className="border-b border-foreground/10 pb-4 mb-4">
                   <SheetTitle className="text-left font-black">MENU</SheetTitle>
                 </SheetHeader>
@@ -330,7 +330,7 @@ const Header = () => {
                   <div className="border-t border-foreground/10 pt-4 mt-2">
                     {user ? (
                       <>
-                        <p className="text-sm text-muted-foreground mb-3">
+                        <p className="text-sm text-foreground/70 font-semibold mb-3">
                           {user.user_metadata?.full_name || user.email}
                         </p>
                         {isAdmin && (

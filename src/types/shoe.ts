@@ -8,6 +8,7 @@ export interface Shoe {
   sizes: number[];
   status: 'in_stock' | 'sold_out';
   createdAt: Date;
+  updatedAt?: Date;
   inventory?: { [size: number]: number };
 }
 

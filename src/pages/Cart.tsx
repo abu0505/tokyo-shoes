@@ -77,7 +77,7 @@ const Cart = () => {
         <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
             <Header />
 
-            <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
+            <main className="flex-grow container mx-auto px-3 md:px-4 py-8 md:py-12">
                 <div className="flex flex-col gap-8">
                     {/* Page Title */}
                     <div>
@@ -107,7 +107,7 @@ const Cart = () => {
                     ) : (
                         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
                             {/* Left Column: Cart Items */}
-                            <div className="flex-1 space-y-6">
+                            <div className="flex-1 space-y-4 sm:space-y-6">
                                 {/* Continue Shopping Link for Desktop (optional, as per design it's on right usually, but design shows it top right relative to title or items) */}
                                 <div className="flex justify-end lg:hidden">
                                     <Link to="/#catalog" className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent">
@@ -116,9 +116,9 @@ const Cart = () => {
                                 </div>
 
                                 {cartItems.map((item) => (
-                                    <div key={item.id} className="flex flex-col sm:flex-row gap-6 py-6 border-b border-border group last:border-0">
+                                    <div key={item.id} className="flex flex-row gap-4 sm:gap-6 p-4 sm:p-6 mb-4 bg-secondary/30 sm:bg-secondary/10 rounded-3xl border border-border/50 group relative transition-all duration-300 hover:border-foreground/20">
                                         {/* Product Image */}
-                                        <div className="w-full sm:w-32 h-32 bg-secondary/30 rounded-3xl flex items-center justify-center p-2 flex-shrink-0">
+                                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-secondary/50 sm:bg-secondary/30 rounded-2xl sm:rounded-3xl flex items-center justify-center p-2 flex-shrink-0">
                                             <img
                                                 src={item.image}
                                                 alt={item.name}
@@ -129,26 +129,26 @@ const Cart = () => {
                                         {/* Product Details */}
                                         <div className="flex-1 flex flex-col justify-between">
                                             <div className="flex justify-between items-start">
-                                                <div>
+                                                <div className="pr-6 sm:pr-0">
                                                     {item.brand && (
-                                                        <p className="text-xs text-muted-foreground font-bold mb-1 uppercase tracking-wide">{item.brand}</p>
+                                                        <p className="text-[10px] sm:text-xs text-muted-foreground font-bold mb-0.5 sm:mb-1 uppercase tracking-wide">{item.brand}</p>
                                                     )}
-                                                    <h3 className="text-lg font-bold leading-tight mb-1">{item.name}</h3>
-                                                    <p className="text-sm text-muted-foreground font-medium">
+                                                    <h3 className="text-base sm:text-lg font-bold leading-tight mb-0.5 sm:mb-1 line-clamp-2">{item.name}</h3>
+                                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                                                         Size: {item.size}
                                                     </p>
                                                 </div>
                                                 <button
                                                     onClick={() => handleRemoveClick(item.id)}
-                                                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                                    className="absolute top-4 right-4 sm:relative sm:top-auto sm:right-auto text-muted-foreground hover:text-destructive transition-colors p-1"
                                                 >
-                                                    <X className="w-5 h-5" />
+                                                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </button>
                                             </div>
 
-                                            <div className="flex justify-between items-end mt-4">
+                                            <div className="flex justify-between items-end mt-2 sm:mt-4">
                                                 {/* Quantity Controls */}
-                                                <div className="flex items-center gap-3 bg-secondary/50 rounded-full px-3 py-1.5 border border-border">
+                                                <div className="flex items-center gap-2 sm:gap-3 bg-secondary/60 sm:bg-secondary/50 rounded-full px-2 py-1 sm:px-3 sm:py-1.5 border border-border">
                                                     <button
                                                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                         className="p-1 hover:text-accent disabled:opacity-50 font-bold"
@@ -156,7 +156,7 @@ const Cart = () => {
                                                     >
                                                         <Minus className="w-3 h-3" strokeWidth={3} />
                                                     </button>
-                                                    <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                                                    <span className="font-bold text-xs sm:text-sm w-3 sm:w-4 text-center">{item.quantity}</span>
                                                     <button
                                                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                         className="p-1 hover:text-accent font-bold"
@@ -166,7 +166,7 @@ const Cart = () => {
                                                 </div>
 
                                                 {/* Price */}
-                                                <div className="text-xl font-black tracking-tight">
+                                                <div className="text-base sm:text-xl font-black tracking-tight">
                                                     ₹{(item.price * item.quantity).toFixed(2)}
                                                 </div>
                                             </div>
@@ -208,7 +208,7 @@ const Cart = () => {
                                         <div className="h-px bg-border/50 my-2"></div>
                                         <div className="flex justify-between items-end">
                                             <span className="text-lg font-bold">Total</span>
-                                            <span className="text-3xl font-black tracking-tighter">₹{total.toFixed(2)}</span>
+                                            <span className="text-2xl md:text-3xl font-black tracking-tighter">₹{total.toFixed(2)}</span>
                                         </div>
                                     </div>
 

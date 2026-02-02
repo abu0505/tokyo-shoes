@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import FilterBar, { SortOption } from '@/components/FilterBar';
@@ -42,9 +43,11 @@ const Index = () => {
         brand: shoe.brand,
         price: shoe.price,
         image: shoe.image_url || '',
+        additionalImages: shoe.additional_images || [],
         sizes: shoe.sizes,
         status: shoe.status,
-        createdAt: new Date(shoe.created_at)
+        createdAt: new Date(shoe.created_at),
+        updatedAt: shoe.updated_at ? new Date(shoe.updated_at) : undefined
       })) as Shoe[];
     },
   });
@@ -176,6 +179,14 @@ const Index = () => {
     >
       <PullToRefresh onRefresh={async () => { await refetch() }}>
         <div>
+          <Helmet>
+            <title>Tokyo Shoes | Premium Sneaker Collection</title>
+            <meta name="description" content="Discover exclusive, authentic sneakers at Tokyo Shoes. Shop the latest drops from Nike, Jordan, Adidas, and more." />
+            <meta property="og:title" content="Tokyo Shoes | Premium Sneaker Collection" />
+            <meta property="og:description" content="Discover exclusive, authentic sneakers at Tokyo Shoes." />
+            <meta property="og:image" content="/hero-img.png" />
+            <meta property="og:type" content="website" />
+          </Helmet>
           <Header />
           <HeroSection onBrowseClick={scrollToCatalog} />
 

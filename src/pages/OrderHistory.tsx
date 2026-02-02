@@ -120,35 +120,11 @@ const OrderHistory = () => {
         }
     }, [user, selectedFilter]);
 
-    const handleBuyAgain = async (order: Order) => {
-        try {
-            for (const item of order.order_items) {
-                if (item.shoe) {
-                    await addToCart({
-                        shoeId: item.shoe_id,
-                        name: item.shoe.name,
-                        brand: item.shoe.brand,
-                        price: item.price,
-                        size: item.size,
-                        color: item.color,
-                        image: item.shoe.image_url || "",
-                        quantity: item.quantity,
-                    });
-                }
-            }
-            toast.success("Items added to cart!");
-            navigate("/cart");
-        } catch (error) {
-            console.error("Error adding items to cart:", error);
-            toast.error("Failed to add items to cart");
-        }
-    };
-
     if (authLoading || isLoading) {
         return (
             <div className="min-h-screen bg-[#f9fafb] text-foreground flex flex-col font-sans">
                 <Header />
-                <main className="flex-grow container mx-auto px-4 py-12">
+                <main className="flex-grow container mx-auto px-4 py-10 md:px-4 md:py-12">
                     <div className="flex items-center justify-center h-64">
                         <TextLoader className="text-2xl" />
                     </div>
@@ -223,7 +199,6 @@ const OrderHistory = () => {
                             <OrderCard
                                 key={order.id}
                                 order={order}
-                                onBuyAgain={() => handleBuyAgain(order)}
                             />
                         ))}
                     </div>

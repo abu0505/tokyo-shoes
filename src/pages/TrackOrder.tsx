@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TextLoader from "@/components/TextLoader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Truck, Package, HelpCircle, ChevronRight, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Check, Truck, Package, HelpCircle, ChevronRight, MapPin, Clock, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF, OrderData, InvoiceResult } from "@/lib/invoiceGenerator";
 import InvoicePreviewModal from "@/components/InvoicePreviewModal";
@@ -32,6 +32,7 @@ interface Order {
     id: string;
     order_code: string | null;
     created_at: string | null;
+    updated_at: string | null; // Added updated_at
     status: string;
     total: number;
     subtotal: number;
@@ -50,7 +51,7 @@ interface Order {
     order_items: OrderItem[];
 }
 
-const OrderDetails = () => {
+const TrackOrder = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user, isLoading: authLoading } = useAuth();
@@ -59,10 +60,13 @@ const OrderDetails = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceResult | null>(null);
+    // Removed local lastUpdated state in favor of order.updated_at logic
 
     const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [selectedItemToReview, setSelectedItemToReview] = useState<OrderItem | null>(null);
+
+    const [isCancelling, setIsCancelling] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -83,6 +87,7 @@ const OrderDetails = () => {
             id,
             order_code,
             created_at,
+            updated_at,
             status,
             total,
             subtotal,
@@ -117,12 +122,12 @@ const OrderDetails = () => {
                     .eq("user_id", user.id)
                     .single();
 
-                if (error) throw error;
+                if (error || !data) throw error || new Error("Order not found");
 
                 // Transform data
-                const transformedOrder = {
-                    ...data,
-                    order_items: data.order_items.map((item: any) => ({
+                const transformedOrder: Order = {
+                    ...(data as any),
+                    order_items: (data as any).order_items.map((item: any) => ({
                         ...item,
                         shoe: item.shoes,
                     })),
@@ -131,7 +136,7 @@ const OrderDetails = () => {
                 setOrder(transformedOrder);
             } catch (error: any) {
                 console.error("Error fetching order details:", error);
-                toast.error("Failed to load order details");
+                toast.error("Failed to load tracking details");
                 navigate("/order-history");
             } finally {
                 setIsLoading(false);
@@ -142,6 +147,54 @@ const OrderDetails = () => {
             fetchOrderDetails();
         }
     }, [user, id, navigate]);
+
+    // Real-time subscription for order status updates
+    useEffect(() => {
+        if (!id) return;
+
+        console.log("Subscribing to order updates for:", id);
+        const channel = supabase
+            .channel('order-status-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'orders',
+                    filter: `id=eq.${id}`,
+                },
+                (payload) => {
+                    console.log("Received order update:", payload);
+                    if (payload.new && payload.new.status) {
+                        setOrder((prev) => prev ? { ...prev, status: payload.new.status, updated_at: new Date().toISOString() } : null);
+                        toast.info(`Order status updated to: ${payload.new.status.toUpperCase()}`);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [id]);
+
+    const formatLastUpdated = (dateString: string) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (date.toDateString() === today.toDateString()) {
+            return `Today ${timeStr}`;
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return `Yesterday ${timeStr}`;
+        } else {
+            return `${date.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} ${timeStr}`;
+        }
+    };
 
     const handleBuyAgainItem = async (item: OrderItem) => {
         if (!item.shoe) return;
@@ -227,8 +280,6 @@ const OrderDetails = () => {
         setReviewModalOpen(true);
     };
 
-    const [isCancelling, setIsCancelling] = useState(false);
-
     const handleCancelOrder = async () => {
         if (!order) return;
 
@@ -244,8 +295,9 @@ const OrderDetails = () => {
             if (error) throw error;
 
             toast.success("Order cancelled successfully");
-            // Refresh order details
-            window.location.reload();
+            // No reload needed as subscription will handle it, but for safety we can refetch or just let subscription do it. 
+            // Actually, let's manually update locally to be instant
+            setOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
         } catch (error: any) {
             console.error("Error cancelling order:", error);
             toast.error(error.message || "Failed to cancel order");
@@ -331,22 +383,17 @@ const OrderDetails = () => {
                 {/* Header Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 items-end">
                     <div className="lg:col-span-2">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                             <div>
                                 <h1 className="text-3xl font-black tracking-tight mb-2">
-                                    ORDER #{order.order_code}
+                                    TRACK ORDER #{order.order_code}
                                 </h1>
                                 <p className="text-muted-foreground">
                                     Placed on {formattedDate}
                                 </p>
                             </div>
 
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm tracking-wide self-start md:self-center ${statusConfig.bgColor} ${statusConfig.textColor}`}>
-                                <div className={`rounded-full p-0.5 ${statusConfig.iconColor.replace('text-', 'bg-')} text-white`}>
-                                    <StatusIcon className={`w-3 h-3 ${statusConfig.textColor}`} strokeWidth={3} />
-                                </div>
-                                {statusConfig.label.toUpperCase()}
-                            </div>
+                            {/* REMOVED ORIGINAL STATUS BADGE HERE */}
                         </div>
                         <hr className="border-gray-200" />
                     </div>
@@ -377,6 +424,155 @@ const OrderDetails = () => {
                     {/* LEFT COLUMN (2/3 width) */}
                     <div className="lg:col-span-2 space-y-8">
 
+                        {/* LIVE STATUS CARD - NEW ADDITION */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 overflow-hidden relative">
+                            {/* Animated background gradient or accent */}
+                            <div className={`absolute top-0 left-0 w-1 h-full ${statusConfig.bgColor.replace('bg-', 'bg-')}`} />
+
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="relative flex h-4 w-4">
+                                            {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusConfig.dotColor} opacity-75`}></span>
+                                            )}
+                                            <span className={`relative inline-flex rounded-full h-4 w-4 ${statusConfig.dotColor} shadow-sm border border-white/20`}></span>
+                                        </div>
+                                        <span className={`font-black text-sm uppercase tracking-widest ${statusConfig.textColor}`}>
+                                            Current Status
+                                        </span>
+                                    </div>
+                                    <h2 className="text-2xl font-black mt-2 mb-1">{statusConfig.label}</h2>
+                                    <p className="text-muted-foreground text-sm">
+                                        Last updated: {order.updated_at ? formatLastUpdated(order.updated_at) : formatLastUpdated(order.created_at)}
+                                    </p>
+                                </div>
+                                <div className={`p-3 rounded-full ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                                    <StatusIcon className="w-6 h-6" strokeWidth={2.5} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Horizontal Order Timeline */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-8">
+                            <h3 className="font-bold text-lg mb-8">Order Status</h3>
+                            <div className="w-full">
+                                <div className="w-full px-2 md:px-4"> {/* Added horizontal padding for mobile */}
+                                    <div className="relative flex justify-between items-center mb-10 md:mb-8"> {/* Adjusted margin */}
+                                        {/* Connecting Line Background */}
+                                        <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 z-0" />
+
+                                        {/* Connecting Line Progress */}
+                                        <div
+                                            className="absolute top-1/2 left-0 h-1 bg-green-500 -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out"
+                                            style={{
+                                                width: order.status === 'delivered' ? '100%' :
+                                                    order.status === 'shipped' ? '83%' :
+                                                        ['pending', 'processing', 'confirmed'].includes(order.status) ? '50%' : '0%'
+                                            }}
+                                        />
+
+                                        {/* Step 1: Placed */}
+                                        <div className="relative z-10 flex flex-col items-center group">
+                                            <div className={`w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 transition-colors duration-300
+                                                ${['pending', 'processing', 'shipped', 'delivered'].includes(order.status)
+                                                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_0_2px_rgba(34,197,94,0.1)] md:shadow-[0_0_0_4px_rgba(34,197,94,0.1)]'
+                                                    : 'bg-white border-gray-200 text-gray-400'}`}
+                                            >
+                                                <svg className="w-3 h-3 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                            <span className={`absolute top-8 md:top-12 text-[10px] md:text-sm font-bold whitespace-nowrap transition-colors duration-300 mt-1
+                                                ${['pending', 'processing', 'shipped', 'delivered'].includes(order.status) ? 'text-black' : 'text-gray-400'}
+                                                left-0 md:left-1/2 md:-translate-x-1/2 text-left md:text-center`}>
+                                                Placed
+                                            </span>
+                                            <span className="absolute top-12 md:top-20 text-[9px] md:text-[11px] text-gray-500 whitespace-nowrap font-medium mt-1 left-0 md:left-1/2 md:-translate-x-1/2 text-left md:text-center">
+                                                {new Date(order.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                            </span>
+                                        </div>
+
+                                        {/* Step 2: Processing */}
+                                        <div className="relative z-10 flex flex-col items-center group">
+                                            <div className={`w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 transition-colors duration-300
+                                                ${['pending', 'processing', 'shipped', 'delivered'].includes(order.status)
+                                                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_0_2px_rgba(34,197,94,0.1)] md:shadow-[0_0_0_4px_rgba(34,197,94,0.1)]'
+                                                    : 'bg-white border-gray-200 text-gray-400'}`}
+                                            >
+                                                {['pending', 'processing', 'shipped', 'delivered'].includes(order.status) && (
+                                                    <svg className="w-3 h-3 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <span className={`absolute top-8 md:top-12 text-[10px] md:text-sm font-bold whitespace-nowrap transition-colors duration-300 mt-1
+                                                ${['pending', 'processing', 'shipped', 'delivered'].includes(order.status) ? 'text-black' : 'text-gray-400'}
+                                                left-1/2 -translate-x-1/2 text-center`}>
+                                                Processing
+                                            </span>
+                                            {['pending', 'processing', 'shipped', 'delivered'].includes(order.status) && (
+                                                <span className="absolute top-12 md:top-20 text-[9px] md:text-[11px] text-gray-500 whitespace-nowrap font-medium mt-1 left-1/2 -translate-x-1/2 text-center">
+                                                    {new Date(order.created_at || new Date()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Step 3: Shipped */}
+                                        <div className="relative z-10 flex flex-col items-center group">
+                                            <div className={`w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 transition-colors duration-300
+                                                ${['shipped', 'delivered'].includes(order.status)
+                                                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_0_2px_rgba(34,197,94,0.1)] md:shadow-[0_0_0_4px_rgba(34,197,94,0.1)]'
+                                                    : 'bg-white border-gray-200 text-gray-400'}`}
+                                            >
+                                                {['shipped', 'delivered'].includes(order.status) && (
+                                                    <svg className="w-3 h-3 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <span className={`absolute top-8 md:top-12 text-[10px] md:text-sm font-bold whitespace-nowrap transition-colors duration-300 mt-1
+                                                ${['shipped', 'delivered'].includes(order.status) ? 'text-black' : 'text-gray-400'}
+                                                left-1/2 -translate-x-1/2 text-center`}>
+                                                Shipped
+                                            </span>
+                                            {order.status === 'shipped' && order.updated_at && (
+                                                <span className="absolute top-12 md:top-20 text-[9px] md:text-[11px] text-gray-500 whitespace-nowrap font-medium mt-1 left-1/2 -translate-x-1/2 text-center">
+                                                    {new Date(order.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Step 4: Delivered */}
+                                        <div className="relative z-10 flex flex-col items-center group">
+                                            <div className={`w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 transition-colors duration-300
+                                                ${order.status === 'delivered'
+                                                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_0_2px_rgba(34,197,94,0.1)] md:shadow-[0_0_0_4px_rgba(34,197,94,0.1)]'
+                                                    : 'bg-white border-gray-200 text-gray-400'}`}
+                                            >
+                                                {order.status === 'delivered' && (
+                                                    <svg className="w-3 h-3 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <span className={`absolute top-8 md:top-12 text-[10px] md:text-sm font-bold whitespace-nowrap transition-colors duration-300 mt-1
+                                                ${order.status === 'delivered' ? 'text-black' : 'text-gray-400'}
+                                                right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 text-right md:text-center`}>
+                                                Delivered
+                                            </span>
+                                            {order.status === 'delivered' && (
+                                                <span className="absolute top-12 md:top-20 text-[9px] md:text-[11px] text-green-600 whitespace-nowrap font-medium mt-1 right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 text-right md:text-center">
+                                                    {new Date(order.updated_at || new Date()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Delivery Details Card */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
                             <div className="flex items-center gap-2 font-bold mb-6">
@@ -391,8 +587,8 @@ const OrderDetails = () => {
                                         <p className="text-lg font-bold text-red-500">Order Cancelled</p>
                                     ) : order.status === 'delivered' ? (
                                         <>
-                                            <p className="text-lg font-bold">{formattedDeliveryDate}</p>
-                                            <p className="text-sm text-green-600 font-medium">Arrived at 2:30 PM (Simulated)</p>
+                                            <p className="text-lg font-bold">{order.updated_at ? new Date(order.updated_at).toLocaleDateString() : formattedDeliveryDate}</p>
+                                            <p className="text-sm text-green-600 font-medium">{order.updated_at ? new Date(order.updated_at).toLocaleTimeString() : "Arrived"}</p>
                                         </>
                                     ) : (
                                         <p className="text-lg font-bold">Estimated: Pending Approval</p>
@@ -405,6 +601,8 @@ const OrderDetails = () => {
                                 </div>
                             </div>
                         </div>
+
+
 
                         {/* Items in Order */}
                         <div>
@@ -548,4 +746,4 @@ const OrderDetails = () => {
     );
 };
 
-export default OrderDetails;
+export default TrackOrder;

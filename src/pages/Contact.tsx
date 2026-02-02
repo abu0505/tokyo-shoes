@@ -138,7 +138,7 @@ const Contact = () => {
         <div className="min-h-screen bg-background">
             <Header />
 
-            <main className="container py-12 px-2">
+            <main className="container py-8 md:py-12 px-2">
                 {/* Page Header */}
                 <motion.div
                     className="mb-12 text-center"
@@ -208,12 +208,12 @@ const Contact = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                        <div className="bg-secondary/30 border border-foreground/10 rounded-xl p-5">
+                        <div className="bg-secondary/30 border border-foreground/10 rounded-xl p-3 md:p-5">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                                     <MessageSquare className="w-5 h-5 text-accent" />
                                 </div>
-                                <h2 className="text-2xl font-bold">Send a Message</h2>
+                                <h2 className="text-xl md:text-2xl font-bold">Send a Message</h2>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
@@ -318,7 +318,7 @@ const Contact = () => {
                     >
                         <div className="bg-secondary/30 border border-foreground/10 rounded-xl overflow-hidden h-full flex flex-col">
                             <div className="p-4 border-b border-foreground/10 flex items-center gap-3 shrink-0">
-                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center">
                                     <MapPin className="w-4 h-4 text-blue-500" />
                                 </div>
                                 <div>

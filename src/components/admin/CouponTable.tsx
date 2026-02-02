@@ -135,7 +135,7 @@ const CouponTable = ({ coupons, isLoading }: CouponTableProps) => {
     return (
         <>
 
-            <Table>
+            <Table wrapperClassName="scrollbar-hide">
                 <TableHeader>
                     <TableRow className="bg-gray-50/50">
                         <TableHead className="w-[120px] font-bold text-xs uppercase text-muted-foreground">Code</TableHead>
@@ -196,7 +196,7 @@ const CouponTable = ({ coupons, isLoading }: CouponTableProps) => {
                                     )}
                                 </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                 {coupon.expires_at
                                     ? format(new Date(coupon.expires_at), 'MMM dd, yyyy')
                                     : <span className="text-xs">No Expiry</span>

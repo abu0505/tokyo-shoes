@@ -6,7 +6,8 @@ interface OrderStatusConfig {
     label: string;
     bgColor: string;
     textColor: string;
-    iconColor: string; // For the dot or icon specifically if needed
+    iconColor: string; // For the text/icon color
+    dotColor: string; // For the solid background color (e.g. bg-yellow-800)
     icon: LucideIcon;
     description: string;
 }
@@ -16,7 +17,8 @@ export const ORDER_STATUS_CONFIG: Record<string, OrderStatusConfig> = {
         label: "Order Placed",
         bgColor: "bg-yellow-100",
         textColor: "text-yellow-800",
-        iconColor: "text-yellow-600",
+        iconColor: "text-yellow-800",
+        dotColor: "bg-yellow-800",
         icon: Clock,
         description: "We've received your order and are verifying details."
     },
@@ -24,7 +26,8 @@ export const ORDER_STATUS_CONFIG: Record<string, OrderStatusConfig> = {
         label: "Processing",
         bgColor: "bg-blue-100",
         textColor: "text-blue-800",
-        iconColor: "text-blue-600",
+        iconColor: "text-blue-800",
+        dotColor: "bg-blue-800",
         icon: Package,
         description: "Your items are being packed and prepared for dispatch."
     },
@@ -32,7 +35,8 @@ export const ORDER_STATUS_CONFIG: Record<string, OrderStatusConfig> = {
         label: "Shipped",
         bgColor: "bg-purple-100",
         textColor: "text-purple-800",
-        iconColor: "text-purple-600",
+        iconColor: "text-purple-800",
+        dotColor: "bg-purple-800",
         icon: Truck,
         description: "Your package is on the way."
     },
@@ -40,7 +44,8 @@ export const ORDER_STATUS_CONFIG: Record<string, OrderStatusConfig> = {
         label: "Delivered",
         bgColor: "bg-green-100",
         textColor: "text-green-800",
-        iconColor: "text-green-600",
+        iconColor: "text-green-800",
+        dotColor: "bg-green-800",
         icon: CheckCircle,
         description: "Package delivered successfully."
     },
@@ -48,7 +53,8 @@ export const ORDER_STATUS_CONFIG: Record<string, OrderStatusConfig> = {
         label: "Cancelled",
         bgColor: "bg-red-100",
         textColor: "text-red-800",
-        iconColor: "text-red-600",
+        iconColor: "text-red-800",
+        dotColor: "bg-red-800",
         icon: XCircle,
         description: "This order has been cancelled and will not be shipped."
     }

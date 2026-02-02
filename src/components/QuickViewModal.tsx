@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
 import { DbShoe } from '@/types/database';
 import StarRating from '@/components/StarRating';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface QuickViewModalProps {
   shoe: DbShoe | null;
@@ -30,6 +31,7 @@ const QuickViewModal = ({
   totalReviews
 }: QuickViewModalProps) => {
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
+  const isMobile = useIsMobile();
 
   if (!shoe) return null;
 
@@ -49,7 +51,7 @@ const QuickViewModal = ({
             </button>
 
             {/* Image section */}
-            <div className="relative bg-gray-100 flex items-center justify-center h-[300px] md:h-auto">
+            <div className="relative bg-gray-100 flex items-center justify-center h-full w-full md:h-auto">
               <img
                 src={shoe.image_url || '/placeholder.svg'}
                 alt={shoe.name}
@@ -58,32 +60,32 @@ const QuickViewModal = ({
             </div>
 
             {/* Info */}
-            <div className="p-6 flex flex-col h-full bg-white">
+            <div className="p-3  md:p-6 flex flex-col h-full bg-white">
               {/* Brand & Rating */}
-              <div className="flex items-center justify-between mb-2 pr-8">
-                <p className="text-sm text-emerald-600 font-bold tracking-widest">
+              <div className="flex items-center justify-between mb-2 md:pr-8 pr-2">
+                <p className="text-xs md:text-sm text-emerald-600 font-bold tracking-widest">
                   {shoe.brand.toUpperCase()}
                 </p>
                 {totalReviews && totalReviews > 0 && (
-                  <StarRating rating={rating || 0} totalReviews={totalReviews} size="md" />
+                  <StarRating rating={rating || 0} totalReviews={totalReviews} size={isMobile ? "sm" : "md"} />
                 )}
               </div>
 
               {/* Name */}
-              <h2 className="text-3xl md:text-[2.5rem] font-black leading-tight mb-4 md:mb-6 text-gray-900">
+              <h2 className="text-3xl md:text-4xl font-black leading-tight mb-4 md:mb-6 text-gray-900">
                 {shoe.name}
               </h2>
 
               {/* Size Selection */}
               <div className="mb-6">
                 <h4 className="font-bold text-xs tracking-wider mb-3 text-gray-500">SELECT SIZE</h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1 md:gap-2">
                   {shoe.sizes.map((size) => (
                     <button
                       key={size}
                       onClick={() => !isSoldOut && setSelectedSize(size)}
                       disabled={isSoldOut}
-                      className={`w-12 h-10 border text-sm font-bold transition-all rounded ${selectedSize === size
+                      className={`w-9 h-8 md:w-12 md:h-10 border text-sm font-bold transition-all rounded ${selectedSize === size
                         ? 'border-gray-900 bg-gray-900 text-white'
                         : 'border-gray-300 text-gray-700 hover:border-gray-500'
                         } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}

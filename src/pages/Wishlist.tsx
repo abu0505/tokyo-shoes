@@ -49,9 +49,11 @@ const Wishlist = () => {
         brand: shoe.brand,
         price: shoe.price,
         image: shoe.image_url || '',
+        additionalImages: shoe.additional_images || [],
         sizes: shoe.sizes,
         status: shoe.status,
-        createdAt: new Date(shoe.created_at)
+        createdAt: new Date(shoe.created_at),
+        updatedAt: shoe.updated_at ? new Date(shoe.updated_at) : undefined
       })) as Shoe[];
     },
     enabled: wishlistIds.length > 0,
@@ -85,9 +87,11 @@ const Wishlist = () => {
       brand: shoe.brand,
       price: shoe.price,
       image_url: shoe.image,
+      additional_images: shoe.additionalImages || null,
       sizes: shoe.sizes,
       status: shoe.status,
-      created_at: shoe.createdAt.toISOString()
+      created_at: shoe.createdAt.toISOString(),
+      updated_at: shoe.updatedAt ? shoe.updatedAt.toISOString() : null
     };
     setQuickViewShoe(dbShoe);
   };
@@ -99,9 +103,11 @@ const Wishlist = () => {
       brand: dbShoe.brand,
       price: dbShoe.price,
       image: dbShoe.image_url || '',
+      additionalImages: dbShoe.additional_images || [],
       sizes: dbShoe.sizes,
       status: dbShoe.status,
       createdAt: new Date(dbShoe.created_at),
+      updatedAt: dbShoe.updated_at ? new Date(dbShoe.updated_at) : undefined
     };
     handleRemoveFromWishlist(shoe);
   };
@@ -115,7 +121,7 @@ const Wishlist = () => {
 
       <main className="container py-8 md:py-12 px-1.5">
         {/* Page Header */}
-        <div className="mb-8 md:mb-12 px-3">
+        <div className="mb-5 md:mb-12 px-3">
           <h1 className="text-3xl md:text-5xl font-black mb-1 md:mb-2">My Collection</h1>
           <p className="text-sm md:text-base text-muted-foreground">Your saved shoes</p>
         </div>

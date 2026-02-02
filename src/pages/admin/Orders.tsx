@@ -199,26 +199,32 @@ const AdminOrders = () => {
     return (
         <AdminLayout
             header={
-                <header className="h-20 shrink-0 bg-white border-b border-border px-8 flex items-center justify-between">
-                    <div className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-black tracking-tight actions uppercase">Orders Management</h2>
-                        <p className="text-xs text-muted-foreground">Manage and track customer orders</p>
-                    </div>
-                    <div className="flex items-center gap-3">
+                <header className="h-auto md:h-20 shrink-0 bg-white border-b border-border px-4 py-4 md:py-0 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
+                    <div className="flex justify-between items-start w-full md:w-auto">
+                        <div className="flex flex-col">
+                            <h2 className="text-lg md:text-2xl font-bold text-black tracking-tight actions uppercase">Orders Management</h2>
+                            <p className="text-xs md:text-sm text-muted-foreground">Manage and track customer orders</p>
+                        </div>
                         <RefreshCw
                             onClick={handleRefresh}
-                            className={`h-5 w-5 cursor-pointer text-black hover:opacity-70 transition-all ${isFetching ? 'animate-spin' : ''}`}
+                            className={`h-5 w-5 md:hidden cursor-pointer text-black hover:opacity-70 transition-all ${isFetching ? 'animate-spin' : ''}`}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 md:flex items-center gap-3 w-full md:w-auto">
+                        <RefreshCw
+                            onClick={handleRefresh}
+                            className={`h-5 w-5 hidden md:block cursor-pointer text-black hover:opacity-70 transition-all ${isFetching ? 'animate-spin' : ''}`}
                         />
                         <button
                             onClick={handleExportCSV}
-                            className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-border hover:bg-black hover:text-white text-black bg-white text-sm font-bold transition-all"
+                            className="h-10 w-full md:w-auto px-4 flex items-center justify-center gap-2 rounded-lg border border-border hover:bg-black hover:text-white text-black bg-white text-sm font-bold transition-all"
                         >
                             <Download className="h-5 w-5" />
                             Export CSV
                         </button>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-black text-white text-sm font-bold transition-all hover:bg-red-600">
+                                <button className="h-10 w-full md:w-auto px-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-black text-white text-sm font-bold transition-all hover:bg-red-600">
                                     <Calendar className="h-4 w-4" />
                                     <span>
                                         {dateRange?.from ? (
@@ -265,14 +271,14 @@ const AdminOrders = () => {
             <div className="space-y-6">
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                     {statCards.map((card, index) => (
                         <motion.div
                             key={card.title}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
-                            className="bg-white border border-[#e6dbdc] p-6 rounded-2xl shadow-sm"
+                            className={`bg-white border border-[#e6dbdc] p-4 md:p-6 rounded-2xl shadow-sm ${index === 2 ? 'col-span-2 sm:col-span-1' : ''}`}
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -292,9 +298,9 @@ const AdminOrders = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white border border-border p-2 rounded-2xl shadow-sm flex flex-row items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <div className="bg-white border border-border p-2 rounded-2xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-2">
                     {/* Search */}
-                    <div className="relative flex-1 max-w-md">
+                    <div className="relative w-full md:w-auto md:flex-1 md:max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search by Order"
@@ -305,7 +311,7 @@ const AdminOrders = () => {
                     </div>
 
                     {/* Status Filters */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                         {STATUS_OPTIONS.map((option) => (
                             <button
                                 key={option.value}
@@ -330,7 +336,7 @@ const AdminOrders = () => {
                     transition={{ duration: 0.3, delay: 0.2 }}
                     className="bg-white border border-[#e6dbdc] rounded-2xl shadow-sm overflow-hidden"
                 >
-                    <Table>
+                    <Table wrapperClassName="scrollbar-hide">
                         <TableHeader>
                             <TableRow className="border-b border-border bg-secondary/50 hover:bg-secondary/50">
                                 <TableHead className="font-bold text-xs text-muted-foreground tracking-wider">
@@ -448,8 +454,15 @@ const AdminOrders = () => {
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {formatDate(new Date(order.created_at || ''))}
+                                        <TableCell className="text-muted-foreground min-w-[120px]">
+                                            <div className="flex flex-col items-start">
+                                                <span className="whitespace-nowrap font-medium text-foreground">
+                                                    {format(new Date(order.created_at || ''), 'MMM dd, yyyy')}
+                                                </span>
+                                                <span className="text-[11px] opacity-70">
+                                                    {format(new Date(order.created_at || ''), 'hh:mm a')}
+                                                </span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-bold">{formatPrice(order.total)}</TableCell>
                                         <TableCell>
@@ -512,7 +525,7 @@ const AdminOrders = () => {
 
                     {/* Pagination */}
                     {!isLoading && ordersData && ordersData.totalCount > 0 && (
-                        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/50">
+                        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-border bg-secondary/50 gap-4 sm:gap-0">
                             <p className="text-sm text-muted-foreground">
                                 Showing <span className="font-bold text-foreground">{startItem}-{endItem}</span> of{' '}
                                 <span className="font-bold text-foreground">{ordersData.totalCount}</span> orders
@@ -543,7 +556,7 @@ const AdminOrders = () => {
                     )}
                 </motion.div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 };
 

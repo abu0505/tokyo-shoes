@@ -14,6 +14,8 @@ import BackToTopButton from '@/components/BackToTopButton';
 import ProductImageZoomV2 from '@/components/ProductImageZoomV2';
 import RelatedProducts from '@/components/RelatedProducts';
 import TextLoader from '@/components/TextLoader';
+import FullScreenGallery from '@/components/FullScreenGallery';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 import SizeGuideModal from '@/components/SizeGuideModal';
@@ -34,6 +36,8 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [reviewRefreshTrigger, setReviewRefreshTrigger] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // State for carousel
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { addToRecentlyViewed } = useRecentlyViewed();
   const { wishlistIds, toggleWishlist, isInWishlist } = useWishlist();
@@ -248,7 +252,7 @@ const ProductDetail = () => {
       <Header />
 
       <motion.main
-        className="container py-5 md:py-5 px-4"
+        className="container py-2 md:py-5 px-3 md:px-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
@@ -257,7 +261,7 @@ const ProductDetail = () => {
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-4 md:mb-6 -ml-2 md:-ml-4 font-bold hover:bg-transparent hover:text-accent group text-sm md:text-base"
+          className="mb-2 md:mb-6 -ml-2 md:-ml-4 font-bold hover:bg-transparent hover:text-accent group text-sm md:text-base"
         >
           <ArrowLeft className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:-translate-x-1" />
           BACK
@@ -303,6 +307,7 @@ const ProductDetail = () => {
                       src={currentImage}
                       alt={`${shoe.name} - View ${currentImageIndex + 1}`}
                       className="w-full h-full"
+                      onClick={() => isMobile && setIsFullScreenOpen(true)}
                     />
                   </motion.div>
                 </AnimatePresence>
@@ -367,7 +372,7 @@ const ProductDetail = () => {
                   size="icon"
                   variant="secondary"
                   onClick={handleWishlistClick}
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-foreground transition-all ${isWishlisted
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground transition-all ${isWishlisted
                     ? 'bg-accent text-accent-foreground hover:bg-accent/90'
                     : 'bg-background hover:bg-accent hover:text-accent-foreground'
                     }`}
@@ -378,7 +383,7 @@ const ProductDetail = () => {
                   size="icon"
                   variant="secondary"
                   onClick={handleShare}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all"
                 >
                   <Share2 className="h-4 w-4 md:h-5 md:w-5" />
                 </Button>
@@ -416,7 +421,7 @@ const ProductDetail = () => {
                   Size {selectedSize} selected
                 </p>
               )}
-              <div className="grid grid-cols-6 md:grid-cols-8 lg:flex lg:flex-wrap gap-2 md:gap-3">
+              <div className="flex flex-wrap gap-1 md:gap-3">
                 {shoe.sizes.map((size) => {
                   const quantity = shoe.inventory?.[size] ?? 0;
                   const isSizeOutOfStock = quantity <= 0;
@@ -426,7 +431,7 @@ const ProductDetail = () => {
                       key={size}
                       onClick={() => !isSoldOut && setSelectedSize(size)}
                       disabled={isSoldOut}
-                      className={`w-full lg:w-10 h-9 md:h-10 border-2 font-bold text-sm md:text-lg transition-all ${selectedSize === size
+                      className={`w-7 md:w-10 h-7 md:h-10 border font-bold text-sm md:text-lg transition-all ${selectedSize === size
                         ? 'border-black bg-black text-white'
                         : 'border-foreground hover:border-black hover:text-black'
                         } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isSizeOutOfStock && selectedSize !== size ? 'bg-secondary text-muted-foreground' : ''}`}
@@ -554,6 +559,13 @@ const ProductDetail = () => {
 
       {/* Back to Top Button */}
       <BackToTopButton />
+
+      <FullScreenGallery
+        images={allImages}
+        initialIndex={currentImageIndex}
+        isOpen={isFullScreenOpen}
+        onClose={() => setIsFullScreenOpen(false)}
+      />
     </motion.div>
   );
 };

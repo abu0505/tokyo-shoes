@@ -247,6 +247,112 @@ const Checkout = () => {
         });
     };
 
+    const OrderSummary = ({ className }: { className?: string }) => (
+        <div className={className}>
+            <h2 className="text-lg font-black tracking-tight mb-6 uppercase">ORDER SUMMARY</h2>
+            {/* Cart Items */}
+            <div className="space-y-4 mb-6">
+                {cartItems.map((item) => (
+                    <div key={item.id} className="flex gap-4">
+                        <div className="relative w-24 h-24 bg-secondary/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-contain rounded-xl p-1"
+                            />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            {item.brand && <p className="text-xs text-muted-foreground font-bold mb-1">{item.brand}</p>}
+                            <h4 className="font-bold text-sm truncate">{item.name}</h4>
+                            <p className="text-xs text-muted-foreground">
+                                Size {item.size} {item.color && item.color !== "Default" ? `/ ${item.color}` : ""} | Quantity {item.quantity}
+                            </p>
+                        </div>
+                        <span className="font-bold text-sm flex-shrink-0">
+                            ₹{(item.price * item.quantity).toFixed(2)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Discount Code */}
+            <div className="space-y-4 mb-6">
+                {couponDetails ? (
+                    <div className="flex justify-between items-center bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-green-700">Coupon Applied</span>
+                            <span className="text-xs text-green-600 font-mono">{couponDetails.code}</span>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className="text-green-700 hover:text-green-800 hover:bg-green-500/20 h-8 w-8 p-0"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex gap-2">
+                        <Input
+                            type="text"
+                            placeholder="Discount code"
+                            value={promoInput}
+                            onChange={(e) => setPromoInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
+                            disabled={isValidating}
+                            className="flex-1 rounded-full py-5 px-5 bg-secondary/30 border-border focus-visible:ring-accent"
+                        />
+                        <Button
+                            type="button"
+                            disabled={!promoInput.trim() || isValidating}
+                            onClick={handleApplyCoupon}
+                            className="rounded-full px-6 font-bold transition-all duration-200"
+                        >
+                            {isValidating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : "Apply"}
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="space-y-3 py-4 border-t border-border">
+                <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-bold">₹{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className={`font-bold ${shippingCost === 0 ? "text-green-600" : ""}`}>
+                        {shippingCost === 0 ? "Free" : `₹${shippingCost.toFixed(2)}`}
+                    </span>
+                </div>
+                {couponDetails && (
+                    <div className="flex justify-between text-sm text-green-600">
+                        <span className="font-bold">Discount ({couponDetails.code})</span>
+                        <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between items-end pt-4 border-t border-border">
+                <span className="text-lg font-bold">Total</span>
+                <div className="text-right">
+                    <span className="text-xs text-muted-foreground mr-2">INR</span>
+                    <span className="text-2xl font-black">₹{total.toFixed(2)}</span>
+                </div>
+            </div>
+
+            {/* Secure Checkout Badge */}
+            <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
+                <Lock className="w-3 h-3" />
+                <span className="font-bold">Secure Checkout</span>
+            </div>
+        </div>
+    );
+
     // Redirect if cart is empty
     if (cartItems.length === 0 && !isSubmitting) {
         return (
@@ -274,7 +380,7 @@ const Checkout = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-200px)]">
                         {/* Left Side - Form (Darker Background) */}
-                        <div className="flex-1 bg-secondary/80 px-4 md:px-8 lg:px-12 xl:px-16 py-8 lg:py-12">
+                        <div className="flex-1 bg-secondary/80 px-3 md:px-8 lg:px-12 xl:px-16 py-8 lg:py-12">
                             <div className="max-w-xl mx-auto lg:ml-auto">
                                 {/* Breadcrumb */}
                                 <nav className="flex items-center gap-2 text-sm mb-8 flex-wrap">
@@ -324,6 +430,9 @@ const Checkout = () => {
                                         </div>
                                     </div>
                                 </section>
+
+                                {/* Mobile Order Summary - Visible only on mobile, before Shipping Address */}
+                                <OrderSummary className="lg:hidden mb-12 bg-background p-6 rounded-3xl border border-border shadow-sm" />
 
                                 {/* Shipping Address */}
                                 <section className="mb-8">
@@ -507,111 +616,9 @@ const Checkout = () => {
                             </div>
                         </div>
 
-                        {/* Right Side - Order Summary (White Background) */}
-                        <div className="lg:w-[450px] xl:w-[500px] bg-background border-l border-border px-4 md:px-8 lg:px-8 py-8 lg:py-12">
-                            <div className="max-w-md mx-auto lg:mx-0 lg:sticky lg:top-28">
-                                <h2 className="text-lg font-black tracking-tight mb-6 uppercase">ORDER SUMMARY</h2>
-                                {/* Cart Items */}
-                                <div className="space-y-4 mb-6">
-                                    {cartItems.map((item) => (
-                                        <div key={item.id} className="flex gap-4">
-                                            <div className="relative w-24 h-24 bg-secondary/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                    className="w-full h-full object-contain rounded-xl p-1"
-                                                />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                {item.brand && <p className="text-xs text-muted-foreground font-bold mb-1">{item.brand}</p>}
-                                                <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Size {item.size} {item.color && item.color !== "Default" ? `/ ${item.color}` : ""} | Quantity {item.quantity}
-                                                </p>
-                                            </div>
-                                            <span className="font-bold text-sm flex-shrink-0">
-                                                ₹{(item.price * item.quantity).toFixed(2)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Discount Code */}
-                                <div className="space-y-4 mb-6">
-                                    {couponDetails ? (
-                                        <div className="flex justify-between items-center bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-green-700">Coupon Applied</span>
-                                                <span className="text-xs text-green-600 font-mono">{couponDetails.code}</span>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleRemoveCoupon}
-                                                className="text-green-700 hover:text-green-800 hover:bg-green-500/20 h-8 w-8 p-0"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Input
-                                                type="text"
-                                                placeholder="Discount code"
-                                                value={promoInput}
-                                                onChange={(e) => setPromoInput(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
-                                                disabled={isValidating}
-                                                className="flex-1 rounded-full py-5 px-5 bg-secondary/30 border-border focus-visible:ring-accent"
-                                            />
-                                            <Button
-                                                type="button"
-                                                disabled={!promoInput.trim() || isValidating}
-                                                onClick={handleApplyCoupon}
-                                                className="rounded-full px-6 font-bold transition-all duration-200"
-                                            >
-                                                {isValidating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : "Apply"}
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Price Breakdown */}
-                                <div className="space-y-3 py-4 border-t border-border">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Subtotal</span>
-                                        <span className="font-bold">₹{subtotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Shipping</span>
-                                        <span className={`font-bold ${shippingCost === 0 ? "text-green-600" : ""}`}>
-                                            {shippingCost === 0 ? "Free" : `₹${shippingCost.toFixed(2)}`}
-                                        </span>
-                                    </div>
-                                    {couponDetails && (
-                                        <div className="flex justify-between text-sm text-green-600">
-                                            <span className="font-bold">Discount ({couponDetails.code})</span>
-                                            <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Total */}
-                                <div className="flex justify-between items-end pt-4 border-t border-border">
-                                    <span className="text-lg font-bold">Total</span>
-                                    <div className="text-right">
-                                        <span className="text-xs text-muted-foreground mr-2">INR</span>
-                                        <span className="text-2xl font-black">₹{total.toFixed(2)}</span>
-                                    </div>
-                                </div>
-
-                                {/* Secure Checkout Badge */}
-                                <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
-                                    <Lock className="w-3 h-3" />
-                                    <span className="font-bold">Secure Checkout</span>
-                                </div>
-                            </div>
+                        {/* Right Side - Order Summary (White Background) - Hidden on mobile */}
+                        <div className="hidden lg:block lg:w-[450px] xl:w-[500px] bg-background border-l border-border px-3 md:px-8 lg:px-8 py-8 lg:py-12">
+                            <OrderSummary className="max-w-md mx-auto lg:mx-0 lg:sticky lg:top-28" />
                         </div>
                     </div>
                 </form>

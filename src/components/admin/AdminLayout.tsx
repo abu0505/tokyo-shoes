@@ -150,7 +150,7 @@ const AdminLayout = ({ children, header }: AdminLayoutProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="p-6 flex-1 bg-secondary/30"
+          className="p-3 md:p-6 flex-1 bg-secondary/30"
         >
           {children}
         </motion.div>

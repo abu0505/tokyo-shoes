@@ -235,7 +235,7 @@ const ShoeCardMobile = React.memo(({
 
           {/* NEW Badge */}
           {isNew && (
-            <Badge className="absolute top-2 left-2 bg-red-600 hover:bg-red-600 text-white font-bold px-2 py-0.5 text-[10px]">
+            <Badge className="absolute top-1 left-1 bg-red-600 hover:bg-red-600 text-white font-bold px-2 py-0.5 text-[10px]">
               NEW
             </Badge>
           )}
@@ -269,7 +269,7 @@ const ShoeCardMobile = React.memo(({
             <div className="flex flex-col gap-1 py-1">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Ruler className="w-3 h-3" />
-                <span className="text-[10px] uppercase font-bold tracking-wide">Size</span>
+                <span className="text-[10px] uppercase font-bold tracking-wide mb-0.5">Size</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {shoe.sizes.slice(0, 4).map((size) => (
@@ -316,7 +316,7 @@ const ShoeCardMobile = React.memo(({
               e.stopPropagation();
               onQuickView(shoe);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/80 border border-foreground/30 rounded-full"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/80 border border-foreground/30 rounded-full active:bg-black active:text-white active:border-black transition-colors"
           >
             <Eye className="h-4 w-4" />
           </Button>
