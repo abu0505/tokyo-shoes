@@ -122,14 +122,31 @@ const OrderDetails = () => {
                 // Transform data
                 const transformedOrder = {
                     ...data,
-                    order_items: data.order_items.map((item: any) => ({
+                    total: Number(data.total),
+                    subtotal: Number(data.subtotal),
+                    shipping_cost: Number(data.shipping_cost),
+                    tax: Number(data.tax),
+                    order_items: data.order_items.map((item: {
+                        id: string;
+                        shoe_id: string;
+                        quantity: number;
+                        size: number;
+                        color: string;
+                        price: number;
+                        shoes: {
+                            name: string;
+                            brand: string;
+                            image_url: string | null;
+                        } | null;
+                    }) => ({
                         ...item,
+                        price: Number(item.price),
                         shoe: item.shoes,
                     })),
                 };
 
                 setOrder(transformedOrder);
-            } catch (error: any) {
+            } catch (error) {
                 console.error("Error fetching order details:", error);
                 toast.error("Failed to load order details");
                 navigate("/order-history");
@@ -206,6 +223,7 @@ const OrderDetails = () => {
             setInvoiceData(result);
             setInvoiceModalOpen(true);
         } catch (error) {
+            console.error("Invoice generation failed:", error);
             toast.error("Failed to generate invoice");
         } finally {
             setIsGeneratingInvoice(false);
@@ -239,6 +257,7 @@ const OrderDetails = () => {
 
         setIsCancelling(true);
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { error } = await supabase.rpc('cancel_order' as any, { p_order_id: order.id });
 
             if (error) throw error;
@@ -246,9 +265,10 @@ const OrderDetails = () => {
             toast.success("Order cancelled successfully");
             // Refresh order details
             window.location.reload();
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error cancelling order:", error);
-            toast.error(error.message || "Failed to cancel order");
+            const message = error instanceof Error ? error.message : "Failed to cancel order";
+            toast.error(message);
         } finally {
             setIsCancelling(false);
         }
@@ -378,7 +398,7 @@ const OrderDetails = () => {
                     <div className="lg:col-span-2 space-y-8">
 
                         {/* Delivery Details Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-14">
                             <div className="flex items-center gap-2 font-bold mb-6">
                                 <Truck className="w-5 h-5 text-red-500 fill-red-500/10" />
                                 <span className="text-lg">Delivery Details</span>
@@ -485,7 +505,7 @@ const OrderDetails = () => {
                                     <span className="font-medium text-foreground">{order.shipping_cost === 0 ? "Free" : `Rs.${order.shipping_cost}`}</span>
                                 </div>
                                 {order.subtotal + order.shipping_cost - order.total > 0 && (
-                                    <div className="flex justify-between text-green-600">
+                                    <div className="flex justify-between text-green-600 pb-2">
                                         <span>Discount {order.discount_code ? `(${order.discount_code})` : ''}</span>
                                         <span className="font-medium">-Rs.{(order.subtotal + order.shipping_cost - order.total).toLocaleString()}</span>
                                     </div>

@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export interface OrderItem {
@@ -7,7 +7,7 @@ export interface OrderItem {
     size: number;
     quantity: number;
     price: number;
-    color?: string;
+    color: string;
     imageUrl?: string | null;
 }
 
@@ -26,9 +26,8 @@ export interface OrderData {
     items: OrderItem[];
     subtotal: number;
     shippingCost: number;
-    // tax: number; // Removed
     discountCode?: string;
-    discountAmount?: number; // Added
+    discountAmount?: number;
     total: number;
     paymentMethod?: string;
 }
@@ -39,257 +38,267 @@ export interface InvoiceResult {
     cleanup: () => void;
 }
 
-// Helper to convert image URL to base64
-const getBase64ImageFromUrl = async (url: string): Promise<string> => {
-    try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error("Error loading image for invoice:", error);
-        return ""; // Return empty string if image fails to load
-    }
-};
-
 export const generateInvoicePDF = async (order: OrderData): Promise<InvoiceResult> => {
-    try {
-        const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+    });
 
-        // Colors
-        const textColor = "#1F2937";
-        const mutedColor = "#6B7280";
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
 
-        // Header
-        doc.setFillColor(0, 0, 0);
-        doc.rect(0, 0, 220, 40, "F");
+    // --- 1. HEADER (BLACK BANNER) ---
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, 0, pageWidth, 40, "F");
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
-        doc.setFont("helvetica", "bold");
-        doc.text("TOKYO SHOES", 20, 25);
+    // Tokyo Shoes Brand (Left side)
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text("TOKYO SHOES", margin, 20);
 
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text("Premium Footwear Collection", 20, 32);
+    // Slogan
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Premium Footwear Collection", margin, 28);
 
-        // Invoice Title
-        doc.setTextColor(textColor);
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("INVOICE", 190, 60, { align: "right" });
+    // Invoice Metadata (Right side of header)
+    const rightColX = pageWidth - margin;
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE", rightColX, 15, { align: "right" });
 
-        // Order Details
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(mutedColor);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Order: #${order.orderCode}`, rightColX, 22, { align: "right" });
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    })}`, rightColX, 27, { align: "right" });
+    doc.text(`Status: ${order.status}`, rightColX, 32, { align: "right" });
 
-        const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
+    // --- 2. INFORMATION SECTIONS ---
+    let summaryY = 55;
+    const billToX = margin;
+    const shippingX = pageWidth / 2 + 5; // Start shipping address slightly past the middle
 
-        doc.text(`Order: #${order.orderCode}`, 190, 68, { align: "right" });
-        doc.text(`Date: ${orderDate}`, 190, 75, { align: "right" });
-        doc.text(`Status: ${order.status}`, 190, 82, { align: "right" });
+    // Bill To (Left)
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To:", billToX, summaryY);
 
-        // Billing Information
-        doc.setTextColor(textColor);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("Bill To:", 20, 60);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    let billToY = summaryY + 5;
+    doc.text(`${order.firstName} ${order.lastName}`, billToX, billToY);
+    billToY += 5;
+    doc.text(order.email, billToX, billToY);
+    billToY += 5;
+    doc.text(order.phone, billToX, billToY);
 
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text(`${order.firstName} ${order.lastName}`, 20, 68);
-        doc.setTextColor(mutedColor);
-        doc.text(order.email, 20, 75);
-        doc.text(order.phone, 20, 82);
+    // Shipping Address (Right)
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Shipping Address:", shippingX, summaryY);
 
-        // Shipping Address
-        doc.setTextColor(textColor);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("Shipping Address:", 20, 95);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    let shippingY = summaryY + 5;
+    const addressLines = [
+        order.address,
+        order.apartment,
+        `${order.city}, ${order.postalCode}`
+    ].filter(Boolean);
 
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(mutedColor);
-        let addressY = 103;
-        doc.text(order.address, 20, addressY);
-        if (order.apartment) {
-            addressY += 7;
-            doc.text(order.apartment, 20, addressY);
-        }
-        addressY += 7;
-        doc.text(`${order.city}, ${order.postalCode}`, 20, addressY);
+    addressLines.forEach(line => {
+        doc.text(line as string, shippingX, shippingY);
+        shippingY += 5;
+    });
 
-        // Pre-load images
-        const itemsWithImages = await Promise.all(
-            order.items.map(async (item) => {
-                let base64 = "";
+    // The start position for the table should be after the tallest address column
+    let currentY = Math.max(billToY, shippingY);
+
+    // --- 3. PRODUCT TABLE ---
+    currentY += 5; // Padding before the table
+
+
+    // Prepare table data
+    const tableData = order.items.map(item => [
+        "", // Placeholder for image
+        {
+            content: `${item.brand}\n${item.name}`,
+            styles: { cellPadding: { top: 5, bottom: 5, left: 2, right: 2 } }
+        },
+        `Size ${item.size}`,
+        item.quantity.toString(),
+        `Rs.${item.price.toFixed(2)}`,
+        `Rs.${(item.price * item.quantity).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [["Image", "Product", "Details", "Qty", "Price", "Total"]],
+        body: tableData,
+        theme: "plain",
+        headStyles: {
+            fillColor: [0, 0, 0],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            fontStyle: "bold",
+            halign: "left",
+        },
+        styles: {
+            fontSize: 9,
+            textColor: [50, 50, 50],
+            cellPadding: 4,
+            valign: "middle",
+        },
+        columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 50 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 15, halign: "center" },
+            4: { cellWidth: 30, halign: "right" },
+            5: { cellWidth: 30, halign: "right" },
+        },
+        didDrawCell: (data) => {
+            if (data.section === "body" && data.column.index === 0) {
+                const item = order.items[data.row.index];
                 if (item.imageUrl) {
-                    base64 = await getBase64ImageFromUrl(item.imageUrl);
-                }
-                return { ...item, base64 };
-            })
-        );
-
-        // Items Table
-        const tableStartY = addressY + 20;
-
-        const tableData = itemsWithImages.map((item) => [
-            "", // Column for image
-            `${item.brand}\n${item.name}`,
-            `Size ${item.size}${item.color && item.color !== "Default" ? ` / ${item.color}` : ""}`,
-            item.quantity.toString(),
-            `Rs.${item.price.toFixed(2)}`,
-            `Rs.${(item.price * item.quantity).toFixed(2)}`,
-        ]);
-
-        // Use autoTable function from import
-        autoTable(doc, {
-            startY: tableStartY,
-            head: [["Image", "Product", "Details", "Qty", "Price", "Total"]],
-            body: tableData,
-            theme: "plain",
-            headStyles: {
-                fillColor: [0, 0, 0],
-                textColor: [255, 255, 255],
-                fontStyle: "bold",
-                fontSize: 9,
-            },
-            bodyStyles: {
-                fontSize: 9,
-                cellPadding: 5,
-                minCellHeight: 25, // Height for image
-            },
-            columnStyles: {
-                0: { cellWidth: 25 }, // Image column
-                1: { cellWidth: 45 },
-                2: { cellWidth: 30 },
-                3: { cellWidth: 15, halign: "center" },
-                4: { cellWidth: 35, halign: "right" }, // Increased width
-                5: { cellWidth: 35, halign: "right" }, // Increased width
-            },
-            alternateRowStyles: {
-                fillColor: [249, 250, 251],
-            },
-            didDrawCell: (data) => {
-                if (data.section === "body" && data.column.index === 0) {
-                    const item = itemsWithImages[data.row.index];
-                    if (item.base64) {
-                        const posX = data.cell.x + 2;
-                        const posY = data.cell.y + 2;
-                        doc.addImage(item.base64, "JPEG", posX, posY, 20, 20);
+                    try {
+                        // Draw a small border/placeholder
+                        doc.setFillColor(245, 245, 245);
+                        doc.rect(data.cell.x + 2, data.cell.y + 2, 21, 21, "F");
+                    } catch (e) {
+                        console.error("Error drawing cell:", e);
                     }
                 }
-            },
-        });
+            }
+        },
+        margin: { left: margin, right: margin }
+    });
 
-        // Summary Section
-        const finalY = (doc as any).lastAutoTable.finalY + 15;
+    currentY = (doc as any).lastAutoTable.finalY + 10;
 
-        // Payment Summary
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(textColor);
-        doc.text("Payment Summary", 120, finalY);
+    // --- 4. PAYMENT SUMMARY ---
+    const summaryX = pageWidth - margin;
+    const labelX = summaryX - 60;
 
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 48, 87);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Payment Summary", labelX, currentY);
+    currentY += 8;
 
-        let summaryY = finalY + 10;
+    const renderSummaryRow = (label: string, value: string, color: [number, number, number] = [80, 80, 80], isBold = false) => {
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(80, 80, 80);
+        doc.text(label, labelX, currentY);
+        doc.setTextColor(...color);
+        doc.text(value, summaryX, currentY, { align: "right" });
+        currentY += 6;
+    };
 
-        // Subtotal
-        doc.setTextColor(mutedColor);
-        doc.text("Subtotal:", 120, summaryY);
-        doc.setTextColor(textColor);
-        doc.text(`Rs.${order.subtotal.toFixed(2)}`, 190, summaryY, { align: "right" });
+    renderSummaryRow("Subtotal:", `Rs.${order.subtotal.toFixed(2)}`);
+    renderSummaryRow("Shipping:", order.shippingCost === 0 ? "Free" : `Rs.${order.shippingCost.toFixed(2)}`);
 
-        // Shipping
-        summaryY += 8;
-        doc.setTextColor(mutedColor);
-        doc.text("Shipping:", 120, summaryY);
-        doc.setTextColor(textColor);
-        doc.text(
-            order.shippingCost === 0 ? "Free" : `Rs.${order.shippingCost.toFixed(2)}`,
-            190,
-            summaryY,
-            { align: "right" }
-        );
-
-
-
-        // Discount (if applicable)
-        if (order.discountAmount && order.discountAmount > 0) {
-            summaryY += 8;
-            doc.setTextColor(34, 197, 94); // Green
-            const codeText = order.discountCode ? ` (${order.discountCode})` : "";
-            doc.text(`Discount${codeText}:`, 120, summaryY);
-            doc.text(`-Rs.${order.discountAmount.toFixed(2)}`, 190, summaryY, { align: "right" });
-        } else if (order.discountCode) {
-            // Fallback if code exists but amount is 0 (shouldn't happen with new logic, but safe to keep or remove)
-            // Keeping it consistent with previous logic if something fails, but ideally we rely on discountAmount
-        }
-
-        // Total
-        summaryY += 12;
-        doc.setDrawColor(0, 0, 0);
-        doc.line(120, summaryY - 3, 190, summaryY - 3);
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(textColor);
-        doc.text("Total:", 120, summaryY + 5);
-        doc.text(`Rs.${order.total.toFixed(2)}`, 190, summaryY + 5, { align: "right" });
-
-        // Payment Method
-        if (order.paymentMethod) {
-            summaryY += 15;
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(mutedColor);
-            doc.text(
-                `Payment Method: ${order.paymentMethod.toUpperCase()}`,
-                120,
-                summaryY
-            );
-        }
-
-        // Footer
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFillColor(249, 250, 251);
-        doc.rect(0, pageHeight - 30, 220, 30, "F");
-
-        doc.setFontSize(8);
-        doc.setTextColor(mutedColor);
-        doc.text("Thank you for shopping with Tokyo Shoes!", 105, pageHeight - 18, {
-            align: "center",
-        });
-        doc.text(
-            "For questions or concerns, please contact support@tokyoshoes.com",
-            105,
-            pageHeight - 12,
-            { align: "center" }
-        );
-
-        // Create blob URL for preview
-        const pdfBlob = doc.output("blob");
-        const blobUrl = URL.createObjectURL(pdfBlob);
-
-        return {
-            blobUrl,
-            download: () => doc.save(`Invoice-${order.orderCode}.pdf`),
-            cleanup: () => URL.revokeObjectURL(blobUrl),
-        };
-    } catch (error) {
-        console.error("Error generating invoice:", error);
-        throw error;
+    if (order.discountAmount && order.discountAmount > 0) {
+        renderSummaryRow(`Discount (${order.discountCode || "OFF"}):`, `-Rs.${order.discountAmount.toFixed(2)}`, [46, 178, 93]); // Green color
     }
+
+    currentY += 2;
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(230, 230, 230);
+    doc.line(labelX, currentY, summaryX, currentY);
+    currentY += 8;
+
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total:", labelX, currentY);
+    doc.text(`Rs.${order.total.toFixed(2)}`, summaryX, currentY, { align: "right" });
+
+    currentY += 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Payment Method: ${order.paymentMethod || "N/A"}`, labelX, currentY);
+
+    const finalY = currentY + 20;
+
+    // --- 5. FOOTER ---
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont("helvetica", "normal");
+    doc.text("Thank you for shopping with Tokyo Shoes!", pageWidth / 2, pageHeight - 15, { align: "center" });
+    doc.text("For questions or concerns, please contact support@tokyoshoes.com", pageWidth / 2, pageHeight - 10, { align: "center" });
+
+    // Handle Images (Post-render addition)
+    // We need to fetch images and convert to base64 for reliable PDF inclusion
+    const fetchImageAsBase64 = async (url: string): Promise<string | null> => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.error("Failed to fetch image:", url);
+            return null;
+        }
+    };
+
+    // Pre-load all images for the table
+    const imagePromises = order.items.map(async (item, index) => {
+        if (item.imageUrl) {
+            const base64 = await fetchImageAsBase64(item.imageUrl);
+            if (base64) {
+                // Find the cell coordinates
+                // AutoTable doesn't make it easy to retroactively add after async, 
+                // so we use the coordinates from the table metadata if available
+                return { base64, index };
+            }
+        }
+        return null;
+    });
+
+    const resolvedImages = await Promise.all(imagePromises);
+
+    // Re-run the table logic if images need to be there, or just draw over it
+    // Actually, standard practice for jsPDF is to add images while drawing.
+    // We'll use a simpler approach: we've already rendered the table with a placeholder column 0.
+    // Now we'll draw the images on top of those cells.
+
+    const table = (doc as any).lastAutoTable;
+    resolvedImages.forEach(img => {
+        if (img) {
+            const row = table.body[img.index];
+            const cell = row.cells[0];
+            doc.addImage(img.base64, "PNG", cell.x + 2.5, cell.y + 2.5, 20, 20);
+        }
+    });
+
+    // Output
+    const pdfBlob = doc.output("blob");
+    const blobUrl = URL.createObjectURL(pdfBlob);
+
+    return {
+        blobUrl,
+        download: () => {
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `Invoice-${order.orderCode}.pdf`;
+            link.click();
+        },
+        cleanup: () => {
+            URL.revokeObjectURL(blobUrl);
+        },
+    };
 };

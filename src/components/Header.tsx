@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, LogOut, Heart, Settings, Menu, Footprints, MessageCircle, ShoppingCart, ChevronDown, Clock, Package } from 'lucide-react';
 import { useState } from 'react';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
@@ -41,6 +41,7 @@ const Header = () => {
   const { wishlistIds } = useWishlist();
   const { cartCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const wishlistCount = wishlistIds.length;
@@ -223,12 +224,12 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/auth">
+                <Link to="/auth" state={{ from: location }}>
                   <Button variant="outline" className="font-bold border-2 border-black bg-transparent text-black hover:bg-black hover:text-white transition-colors">
                     Login
                   </Button>
                 </Link>
-                <Link to="/auth" state={{ view: 'signup' }}>
+                <Link to="/auth" state={{ view: 'signup', from: location }}>
                   <Button className="font-bold bg-black text-white hover:bg-black/90">
                     Sign Up
                   </Button>
@@ -354,6 +355,7 @@ const Header = () => {
                     ) : (
                       <Link
                         to="/auth"
+                        state={{ from: location }}
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-2 text-lg font-bold tracking-wide hover:text-accent transition-colors py-2"
                       >

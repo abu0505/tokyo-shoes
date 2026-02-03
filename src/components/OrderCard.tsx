@@ -98,6 +98,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
             shippingCost: order.shipping_cost,
             // tax: order.tax, // Removed
             discountCode: order.discount_code || undefined,
+            discountAmount: Math.max(0, order.subtotal + order.shipping_cost - order.total),
             total: order.total,
             paymentMethod: order.payment_method || undefined,
         };

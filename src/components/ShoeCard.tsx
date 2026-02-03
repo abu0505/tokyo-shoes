@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shoe, isNewArrival } from '@/types/shoe';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getOptimizedImageUrl } from '@/lib/imageOptimizer';
 import { formatPrice } from '@/lib/format';
 import StarRating from '@/components/StarRating';
 
@@ -45,7 +46,7 @@ const ShoeCard = React.memo(({
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-secondary">
         <img
-          src={shoe.image}
+          src={getOptimizedImageUrl(shoe.image, 400)}
           alt={shoe.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"

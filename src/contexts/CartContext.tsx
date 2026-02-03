@@ -67,7 +67,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 if (error) throw error;
 
                 // Transform database response to CartItem shape
-                const items: CartItem[] = data.map(item => ({
+                const initialItems: CartItem[] = data.map(item => ({
                     id: item.id,
                     shoeId: item.shoe_id,
                     name: item.shoes?.name || 'Unknown Shoe',
@@ -77,10 +77,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                     quantity: item.quantity,
                     size: item.size,
                     color: item.color,
-                    brand: item.shoes?.brand || item.brand // Fallback to item.brand if shoe brand missing
+                    brand: item.shoes?.brand || item.brand
                 }));
 
-                setCartItems(items);
+                // Fetch stock levels for these items
+                // We need to query shoe_sizes matching shoe_id and size
+                if (initialItems.length > 0) {
+                    const promises = initialItems.map(async (item) => {
+                        const { data: stockData } = await supabase
+                            .from('shoe_sizes')
+                            .select('quantity')
+                            .eq('shoe_id', item.shoeId)
+                            .eq('size', item.size)
+                            .single();
+
+                        return {
+                            ...item,
+                            maxQuantity: stockData ? stockData.quantity : 0
+                        };
+                    });
+
+                    const itemsWithStock = await Promise.all(promises);
+                    setCartItems(itemsWithStock);
+                } else {
+                    setCartItems(initialItems);
+                }
+
             } catch (error) {
                 console.error('Error fetching cart:', error);
                 toast.error('Failed to load cart');
@@ -99,10 +121,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
 
         try {
-            // Check if item already exists (optimistic update could be done here but simpler to query/insert)
-            // We use the unique constraint on (user_id, shoe_id, size, color) to handle upserts safely if we want,
-            // but standard pattern is check existence or use upsert with conflict
+            // First check the current stock for this item
+            const { data: stockData, error: stockError } = await supabase
+                .from('shoe_sizes')
+                .select('quantity')
+                .eq('shoe_id', newItem.shoeId)
+                .eq('size', newItem.size)
+                .single();
 
+            if (stockError) {
+                console.error("Error checking stock:", stockError);
+                // Proceed with caution or block? Better to block if we are strict.
+            }
+
+            const availableStock = stockData ? stockData.quantity : 0;
+
+            // Check if item already exists
             const { data: existingItem, error: fetchError } = await supabase
                 .from('cart_items')
                 .select('id, quantity')
@@ -112,12 +146,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 .eq('color', newItem.color || 'Default')
                 .single();
 
-            if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is row not found
+            if (fetchError && fetchError.code !== 'PGRST116') {
                 throw fetchError;
             }
 
+            let newQuantity = newItem.quantity;
             if (existingItem) {
-                const newQuantity = existingItem.quantity + newItem.quantity;
+                newQuantity += existingItem.quantity;
+            }
+
+            // Validation: Check if potential new quantity exceeds stock
+            if (newQuantity > availableStock) {
+                toast.error(`Sorry, only ${availableStock} items left in stock`);
+                return;
+            }
+
+            if (existingItem) {
                 const { error } = await supabase
                     .from('cart_items')
                     .update({ quantity: newQuantity })
@@ -126,7 +170,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 if (error) throw error;
 
                 setCartItems(prev => prev.map(item =>
-                    item.id === existingItem.id ? { ...item, quantity: newQuantity } : item
+                    item.id === existingItem.id ? { ...item, quantity: newQuantity, maxQuantity: availableStock } : item
                 ));
                 toast.success(`Updated quantity for ${newItem.name}`);
 
@@ -139,19 +183,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                         quantity: newItem.quantity,
                         size: newItem.size,
                         color: newItem.color || 'Default',
-                        brand: newItem.brand // Storing brand partly redundant if in shoes table, but harmless
+                        brand: newItem.brand
                     })
-                    .select('id') // We need the new ID
+                    .select('id')
                     .single();
 
                 if (error) throw error;
 
-                // Optimistically adding to state with the new ID
-                // But wait, we need the DB ID. The insert returns it.
-                // We construct the full item for state
                 const newCartItem: CartItem = {
                     ...newItem,
-                    id: data.id
+                    id: data.id,
+                    maxQuantity: availableStock
                 };
 
                 setCartItems(prev => [...prev, newCartItem]);
@@ -176,7 +218,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             if (error) throw error;
 
             setCartItems(prev => prev.filter(item => item.id !== id));
-            // toast.success('Removed from cart'); // Optional, removed to be less noisy or kept? UI usually handles visual removal nicely
         } catch (error) {
             console.error('Error removing from cart:', error);
             toast.error('Failed to remove item');
@@ -187,6 +228,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (!user) return;
 
         const newQuantity = Math.max(1, quantity);
+
+        // Find current item to check stock limit
+        const currentItem = cartItems.find(item => item.id === id);
+        if (currentItem && currentItem.maxQuantity !== undefined && newQuantity > currentItem.maxQuantity) {
+            toast.error(`Sorry, only ${currentItem.maxQuantity} items left in stock`);
+            return;
+        }
 
         // Optimistic update
         const previousItems = [...cartItems];
@@ -223,12 +271,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             const { error } = await supabase
                 .from('cart_items')
                 .delete()
-                .eq('user_id', user.id); // Delete all for this user
+                .eq('user_id', user.id);
 
             if (error) throw error;
 
             setCartItems([]);
-            setCouponDetails(null); // Clear coupon when cart is cleared
+            setCouponDetails(null);
         } catch (error) {
             console.error('Error clearing cart:', error);
             toast.error('Failed to clear cart');

@@ -21,29 +21,32 @@ export const useAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string) => {
     try {
-      // Use RPC function with SECURITY DEFINER to bypass RLS
+      // 1. Try RPC check first (secure, encapsulated)
       const { data, error } = await supabase
         .rpc('has_role', { _user_id: userId, _role: 'admin' });
 
-      if (error) {
-        console.error('Error checking admin role via RPC:', error);
-        // Fallback to direct query if RPC fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          return false;
-        }
-        return !!fallbackData;
+      if (!error) {
+        return !!data;
       }
-      return !!data;
+
+      console.warn('RPC check failed, falling back to table query:', error);
+
+      // 2. Fallback to direct table query (if RPC is missing or fails)
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Admin role check failed:', roleError);
+        return false;
+      }
+
+      return !!roleData;
     } catch (err) {
-      console.error('Error checking admin role:', err);
+      console.error('Unexpected error checking admin role:', err);
       return false;
     }
   }, []);
@@ -51,98 +54,72 @@ export const useAuth = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // Helper to safely update state only if component is still mounted
     const safeSetState = (updater: (prev: AuthState) => AuthState) => {
       if (isMounted) {
         setAuthState(updater);
       }
     };
 
-    // Check admin and update state safely
     const handleAdminCheck = async (userId: string) => {
-      try {
-        const isAdmin = await checkAdminRole(userId);
-        safeSetState(prev => ({
-          ...prev,
-          isAdmin,
-          isLoading: false,
-          isAdminLoading: false,
-        }));
-      } catch (error) {
-        console.error('Admin check failed:', error);
-        safeSetState(prev => ({
-          ...prev,
-          isAdmin: false,
-          isLoading: false,
-          isAdminLoading: false,
-        }));
-      }
+      // Start loading state for admin check if not already loading
+      safeSetState(prev => ({ ...prev, isAdminLoading: true }));
+
+      const isAdmin = await checkAdminRole(userId);
+
+      safeSetState(prev => ({
+        ...prev,
+        isAdmin,
+        isAdminLoading: false,
+        isLoading: false, // Ensure main loading is done too
+      }));
     };
 
-    // Set up auth state listener - keep it synchronous, defer async work
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Update session info immediately
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
         safeSetState(prev => ({
           ...prev,
           session,
-          user: session?.user ?? null,
-          isLoading: !!session?.user,
-          isAdminLoading: !!session?.user,
-          // Reset admin status when user changes
-          isAdmin: session?.user ? prev.isAdmin : false,
+          user: session.user,
+          isLoading: true, // Keep loading while we check admin
+          isAdminLoading: true,
         }));
-
-        // Defer admin check to avoid async issues in callback
-        if (session?.user) {
-          handleAdminCheck(session.user.id);
-        } else {
-          safeSetState(prev => ({
-            ...prev,
-            isAdmin: false,
-            isLoading: false,
-            isAdminLoading: false,
-          }));
-        }
-      }
-    );
-
-    // Check for existing session on mount
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        if (session?.user) {
-          safeSetState(prev => ({
-            ...prev,
-            session,
-            user: session.user,
-          }));
-
-          await handleAdminCheck(session.user.id);
-        } else {
-          safeSetState(prev => ({
-            ...prev,
-            session: null,
-            user: null,
-            isLoading: false,
-            isAdminLoading: false,
-            isAdmin: false,
-          }));
-        }
-      } catch (error) {
-        console.error('Session init failed:', error);
+        handleAdminCheck(session.user.id);
+      } else {
         safeSetState(prev => ({
           ...prev,
+          session: null,
+          user: null,
           isLoading: false,
           isAdminLoading: false,
+          isAdmin: false,
         }));
       }
-    };
+    });
 
-    initSession();
+    // Listen for changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        safeSetState(prev => ({
+          ...prev,
+          session,
+          user: session.user,
+        }));
+        // Always re-check admin on auth change to be safe
+        handleAdminCheck(session.user.id);
+      } else {
+        safeSetState(prev => ({
+          ...prev,
+          session: null,
+          user: null,
+          isLoading: false,
+          isAdminLoading: false,
+          isAdmin: false,
+        }));
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -150,51 +127,36 @@ export const useAuth = () => {
     };
   }, [checkAdminRole]);
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
-        }
-      }
-    });
-    return { data, error };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
-  };
-
-  const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      }
-    });
-    return { data, error };
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-  };
-
   return {
     ...authState,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
+    signUp: async (email: string, password: string, firstName: string, lastName: string) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
+          }
+        }
+      });
+      return { data, error };
+    },
+    signIn: async (email: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { data, error };
+    },
+    signInWithGoogle: async () => {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/` }
+      });
+      return { data, error };
+    },
+    signOut: async () => {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    },
   };
 };

@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
     if (isLoading) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-white">
+            <div className="h-screen w-full flex items-center justify-center bg-background">
                 <TextLoader text="Verifying access" />
             </div>
         );

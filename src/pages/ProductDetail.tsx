@@ -16,6 +16,7 @@ import RelatedProducts from '@/components/RelatedProducts';
 import TextLoader from '@/components/TextLoader';
 import FullScreenGallery from '@/components/FullScreenGallery';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getOptimizedImageUrl } from '@/lib/imageOptimizer';
 
 
 import SizeGuideModal from '@/components/SizeGuideModal';
@@ -130,7 +131,7 @@ const ProductDetail = () => {
     if (allImages.length > 0) {
       allImages.forEach((src) => {
         const img = new Image();
-        img.src = src;
+        img.src = getOptimizedImageUrl(src, 800);
       });
     }
   }, [allImages]);
@@ -300,7 +301,7 @@ const ProductDetail = () => {
                     }`}
                 >
                   <img
-                    src={img}
+                    src={getOptimizedImageUrl(img, 100)}
                     alt={`View ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -322,7 +323,7 @@ const ProductDetail = () => {
                     className="w-full h-full"
                   >
                     <ProductImageZoomV2
-                      src={currentImage}
+                      src={getOptimizedImageUrl(currentImage, 800)}
                       alt={`${shoe.name} - View ${currentImageIndex + 1}`}
                       className="w-full h-full"
                       onClick={() => isMobile && setIsFullScreenOpen(true)}

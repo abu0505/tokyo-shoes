@@ -221,6 +221,7 @@ const Auth = () => {
                     <Input
                       id="firstName"
                       type="text"
+                      autoComplete="given-name"
                       placeholder="John"
                       className="pl-10 h-12 border-2 border-foreground focus:border-accent"
                       {...register('firstName')}
@@ -239,6 +240,7 @@ const Auth = () => {
                     <Input
                       id="lastName"
                       type="text"
+                      autoComplete="family-name"
                       placeholder="Doe"
                       className="pl-10 h-12 border-2 border-foreground focus:border-accent"
                       {...register('lastName')}
@@ -261,6 +263,7 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="your@email.com"
                   className="pl-10 h-12 border-2 border-foreground focus:border-accent"
                   {...register('email')}
@@ -296,6 +299,7 @@ const Auth = () => {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete={view === 'signup' ? 'new-password' : 'current-password'}
                     placeholder="••••••••"
                     className="pl-10 pr-10 h-12 border-2 border-foreground focus:border-accent"
                     {...register('password')}

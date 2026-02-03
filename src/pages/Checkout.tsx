@@ -183,6 +183,58 @@ const Checkout = () => {
         }
     };
 
+    // Verify inventory on mount
+    const [stockIssues, setStockIssues] = useState<Record<string, { type: 'sold_out' | 'insufficient', available: number, name: string }>>({});
+    const [isValidatingStock, setIsValidatingStock] = useState(true);
+
+    useEffect(() => {
+        const validateInventory = async () => {
+            if (cartItems.length === 0) {
+                setIsValidatingStock(false);
+                return;
+            }
+
+            setIsValidatingStock(true);
+            const issues: Record<string, { type: 'sold_out' | 'insufficient', available: number, name: string }> = {};
+
+            try {
+                // Check stock for all items
+                const promises = cartItems.map(async (item) => {
+                    const { data } = await supabase
+                        .from('shoe_sizes')
+                        .select('quantity')
+                        .eq('shoe_id', item.shoeId)
+                        .eq('size', item.size)
+                        .single();
+
+                    const available = data ? data.quantity : 0;
+
+                    if (available === 0) {
+                        issues[item.id] = { type: 'sold_out', available: 0, name: item.name };
+                    } else if (available < item.quantity) {
+                        issues[item.id] = { type: 'insufficient', available, name: item.name };
+                    }
+                });
+
+                await Promise.all(promises);
+
+                if (Object.keys(issues).length > 0) {
+                    setStockIssues(issues);
+                    toast.error("Some items in your cart are no longer available or have insufficient stock.");
+                } else {
+                    setStockIssues({});
+                }
+
+            } catch (error) {
+                console.error("Error validating inventory:", error);
+            } finally {
+                setIsValidatingStock(false);
+            }
+        };
+
+        validateInventory();
+    }, [cartItems]);
+
     // Handle "Add New Address" click
     const handleAddNewAddress = () => {
         setFormData(prev => ({
@@ -231,6 +283,12 @@ const Checkout = () => {
             return;
         }
 
+        // Block if stock issues exist
+        if (Object.keys(stockIssues).length > 0 || isValidatingStock) {
+            toast.error("Please remove or update out-of-stock items before proceeding.");
+            return;
+        }
+
         // Validate required fields
         if (!formData.firstName || !formData.lastName || !formData.address ||
             !formData.city || !formData.postalCode || !formData.phone || !formData.email) {
@@ -252,27 +310,44 @@ const Checkout = () => {
             <h2 className="text-lg font-black tracking-tight mb-6 uppercase">ORDER SUMMARY</h2>
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
-                {cartItems.map((item) => (
-                    <div key={item.id} className="flex gap-4">
-                        <div className="relative w-24 h-24 bg-secondary/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-full h-full object-contain rounded-xl p-1"
-                            />
+                {cartItems.map((item) => {
+                    const issue = stockIssues[item.id];
+                    return (
+                        <div key={item.id} className={`flex gap-4 ${issue ? 'opacity-70' : ''}`}>
+                            <div className="relative w-24 h-24 bg-secondary/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-full h-full object-contain rounded-xl p-1"
+                                />
+                                {issue && (
+                                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl backdrop-blur-[1px]">
+                                        <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase">
+                                            {issue.type === 'sold_out' ? 'Sold Out' : `Only ${issue.available} Left`}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                {item.brand && <p className="text-xs text-muted-foreground font-bold mb-1">{item.brand}</p>}
+                                <h4 className="font-bold text-sm truncate">{item.name}</h4>
+                                <p className="text-xs text-muted-foreground">
+                                    Size {item.size} {item.color && item.color !== "Default" ? `/ ${item.color}` : ""} | Quantity {item.quantity}
+                                </p>
+                                {issue && (
+                                    <p className="text-xs text-red-600 font-bold mt-1">
+                                        {issue.type === 'sold_out'
+                                            ? "Item is currently out of stock."
+                                            : `Please reduce quantity to ${issue.available}.`}
+                                    </p>
+                                )}
+                            </div>
+                            <span className="font-bold text-sm flex-shrink-0">
+                                ₹{(item.price * item.quantity).toFixed(2)}
+                            </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            {item.brand && <p className="text-xs text-muted-foreground font-bold mb-1">{item.brand}</p>}
-                            <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                            <p className="text-xs text-muted-foreground">
-                                Size {item.size} {item.color && item.color !== "Default" ? `/ ${item.color}` : ""} | Quantity {item.quantity}
-                            </p>
-                        </div>
-                        <span className="font-bold text-sm flex-shrink-0">
-                            ₹{(item.price * item.quantity).toFixed(2)}
-                        </span>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Discount Code */}
