@@ -8,6 +8,8 @@ import { getOptimizedImageUrl } from '@/lib/imageOptimizer';
 import { formatPrice } from '@/lib/format';
 import StarRating from '@/components/StarRating';
 
+import { useImageBrightness } from '@/hooks/useImageBrightness';
+
 interface ShoeCardProps {
   shoe: Shoe;
   onWishlistClick: (shoe: Shoe) => void;
@@ -30,6 +32,12 @@ const ShoeCard = React.memo(({
   const navigate = useNavigate();
   const isNew = isNewArrival(shoe);
   const isSoldOut = shoe.status === 'sold_out';
+
+  // Detect brightness at top-right corner (approx 90% x, 10% y)
+  // We use the optimized image url logic internally in the hook by passing the raw url, 
+  // but to be safe and consistent with what's rendered, let's pass the raw shoe.image. 
+  // The hook does its own loading.
+  const isDarkBg = useImageBrightness(shoe.image, { x: 0.9, y: 0.1 });
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking the wishlist button
@@ -74,9 +82,9 @@ const ShoeCard = React.memo(({
               onWishlistClick(shoe);
             }}
             disabled={isSoldOut && !showRemoveButton}
-            className={`w-8 h-8 md:w-12 md:h-12 rounded-full border-2 border-foreground transition-all ${isInWishlist
-              ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-              : 'bg-background hover:bg-accent hover:text-accent-foreground'
+            className={`w-8 h-8 md:w-12 md:h-12 rounded-full border border-white/30 backdrop-blur-md transition-all shadow-lg ${isInWishlist
+              ? 'bg-red-500/30 hover:bg-red-500/50 text-red-600'
+              : `bg-white/20 hover:bg-white/40 ${isDarkBg ? 'text-white' : 'text-black'}`
               }`}
           >
             {showRemoveButton ? (
@@ -95,7 +103,10 @@ const ShoeCard = React.memo(({
                 e.stopPropagation();
                 onQuickView(shoe);
               }}
-              className="hidden md:flex w-12 h-12 rounded-full border-2 border-foreground bg-background hover:bg-foreground hover:text-background transition-all opacity-0 group-hover:opacity-100"
+              className={`hidden md:flex w-12 h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:bg-white/40 ${isDarkBg
+                ? 'text-white'
+                : 'text-black'
+                }`}
             >
               <Eye className="h-5 w-5" />
             </Button>

@@ -1,3 +1,4 @@
+import { useImageBrightness } from '@/hooks/useImageBrightness';
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -100,6 +101,9 @@ const ProductDetail = () => {
     : [];
 
   const currentImage = allImages[currentImageIndex] || '';
+
+  // Detect brightness at top-right corner to dynamically color icons
+  const isDarkBg = useImageBrightness(currentImage, { x: 0.9, y: 0.1 });
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
@@ -340,7 +344,7 @@ const ProductDetail = () => {
                           e.stopPropagation();
                           prevImage();
                         }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border border-white/30 text-black p-2 rounded-full shadow-lg z-10 transition-all active:scale-95 disabled:opacity-30"
                         aria-label="Previous image"
                       >
                         <ChevronLeft className="w-6 h-6" />
@@ -350,7 +354,7 @@ const ProductDetail = () => {
                           e.stopPropagation();
                           nextImage();
                         }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border border-white/30 text-black p-2 rounded-full shadow-lg z-10 transition-all active:scale-95 disabled:opacity-30"
                         aria-label="Next image"
                       >
                         <ChevronRight className="w-6 h-6" />
@@ -391,9 +395,9 @@ const ProductDetail = () => {
                   size="icon"
                   variant="secondary"
                   onClick={handleWishlistClick}
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground transition-all ${isWishlisted
-                    ? 'bg-accent text-accent-foreground hover:bg-accent/90'
-                    : 'bg-background hover:bg-accent hover:text-accent-foreground'
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/30 backdrop-blur-md transition-all shadow-lg ${isWishlisted
+                    ? 'bg-red-500/30 hover:bg-red-500/50 text-red-600'
+                    : `bg-white/20 hover:bg-white/40 ${isDarkBg ? 'text-white' : 'text-black'}`
                     }`}
                 >
                   <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -402,7 +406,10 @@ const ProductDetail = () => {
                   size="icon"
                   variant="secondary"
                   onClick={handleShare}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full md:border-2 border-foreground bg-background hover:bg-foreground hover:text-background active:scale-95 transition-all text-foreground"
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all shadow-lg hover:bg-white/40 ${isDarkBg
+                    ? 'text-white'
+                    : 'text-black'
+                    }`}
                 >
                   <Share2 className="h-4 w-4 md:h-5 md:w-5" />
                 </Button>

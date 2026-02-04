@@ -88,7 +88,7 @@ const RecentlyViewedDropdown = ({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="recently-viewed-popover p-0 border-2 border-foreground bg-background z-[100]"
+        className="recently-viewed-popover p-0 border border-white/20 bg-background/85 backdrop-blur-md z-[100] shadow-xl"
         align={isMobile ? "end" : "start"}
         alignOffset={isMobile ? -4 : 0}
         sideOffset={8}

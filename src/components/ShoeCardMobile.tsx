@@ -316,7 +316,7 @@ const ShoeCardMobile = React.memo(({
               e.stopPropagation();
               onQuickView(shoe);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/80 border border-foreground/30 rounded-full active:bg-black active:text-white active:border-black transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-foreground active:scale-95 transition-all shadow-lg"
           >
             <Eye className="h-4 w-4" />
           </Button>
