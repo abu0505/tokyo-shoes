@@ -184,7 +184,7 @@ const Index = () => {
             <meta name="description" content="Discover exclusive, authentic sneakers at Tokyo Shoes. Shop the latest drops from Nike, Jordan, Adidas, and more." />
             <meta property="og:title" content="Tokyo Shoes | Premium Sneaker Collection" />
             <meta property="og:description" content="Discover exclusive, authentic sneakers at Tokyo Shoes." />
-            <meta property="og:image" content="/hero-img.png" />
+            <meta property="og:image" content="/og-image.png" />
             <meta property="og:type" content="website" />
           </Helmet>
           <Header />
