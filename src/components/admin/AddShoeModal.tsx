@@ -113,7 +113,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
   }, [shoe, open, reset]);
 
   // Image validation constants
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
   const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const MIME_TO_EXT: Record<string, string> = {
     'image/jpeg': 'jpg',
@@ -124,7 +124,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
   const validateImageFile = (file: File): string | null => {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return 'Image must be smaller than 5MB';
+      return 'Image must be smaller than 50MB';
     }
 
     // Validate MIME type (not just extension)
@@ -381,7 +381,7 @@ const AddShoeModal = ({ open, onClose, shoe }: AddShoeModalProps) => {
                     Click or drag to upload
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    PNG, JPG, or WEBP (max 5MB)
+                    PNG, JPG, or WEBP (max 50MB)
                   </p>
                 </>
               )}
