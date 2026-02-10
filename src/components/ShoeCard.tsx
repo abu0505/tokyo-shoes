@@ -83,6 +83,7 @@ const ShoeCard = React.memo(({
           <Button
             size="icon"
             variant="secondary"
+            data-testid="wishlist-button"
             onClick={(e) => {
               e.stopPropagation();
               onWishlistClick(shoe);
@@ -105,11 +106,12 @@ const ShoeCard = React.memo(({
             <Button
               size="icon"
               variant="secondary"
+              data-testid="quick-view-button"
               onClick={(e) => {
                 e.stopPropagation();
                 onQuickView(shoe);
               }}
-              className={`hidden md:flex w-12 h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:bg-white/40 ${isDarkBg
+              className={`hidden md:flex w-12 h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all opacity-50 hover:opacity-100 shadow-lg hover:bg-white/40 ${isDarkBg
                 ? 'text-white'
                 : 'text-black'
                 }`}

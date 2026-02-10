@@ -198,6 +198,7 @@ const FilterBar = ({
                   step={500}
                   onValueChange={(value) => onPriceChange([minPrice, value[0]])}
                   className="mb-3 md:mb-4"
+                  data-testid="price-slider"
                 />
                 <div className="flex justify-between text-xs md:text-sm font-medium">
                   <span>{formatPrice(priceRange[0])}</span>

@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, User, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import TextLoader from '@/components/TextLoader';
@@ -46,6 +47,7 @@ const Auth = () => {
   const [view, setView] = useState<AuthView>((location.state as { view?: AuthView })?.view || 'login');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const from = (location.state as { from?: string })?.from || '/';
 
@@ -110,15 +112,17 @@ const Auth = () => {
 
   const onSubmit = async (data: AuthFormData) => {
     setIsSubmitting(true);
+    setAuthError(null);
     try {
       if (view === 'login' && data.password) {
         const { data: authData, error } = await signIn(data.email, data.password);
         if (error) {
+          let errorMessage = error.message;
           if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
+            errorMessage = 'Invalid email or password';
           }
+          setAuthError(errorMessage);
+          toast.error(errorMessage);
           return;
         }
 
@@ -128,11 +132,12 @@ const Auth = () => {
       } else if (view === 'signup' && data.password && data.firstName && data.lastName) {
         const { data: signUpData, error } = await signUp(data.email, data.password, data.firstName, data.lastName);
         if (error) {
+          let errorMessage = error.message;
           if (error.message.includes('User already registered')) {
-            toast.error('An account with this email already exists');
-          } else {
-            toast.error(error.message);
+            errorMessage = 'An account with this email already exists';
           }
+          setAuthError(errorMessage);
+          toast.error(errorMessage);
           return;
         }
 
@@ -161,13 +166,15 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    setAuthError(null);
     const { error } = await signInWithGoogle();
     if (error) {
+      let errorMessage = error.message;
       if (error.message.includes('provider is not enabled')) {
-        toast.error('Google Login is not enabled. Please enable it in your Supabase dashboard.');
-      } else {
-        toast.error(error.message);
+        errorMessage = 'Google Login is not enabled. Please enable it in your Supabase dashboard.';
       }
+      setAuthError(errorMessage);
+      toast.error(errorMessage);
     }
     // Note: Google Sign In redirects away, so we don't need to handle post-auth here usually.
     // If it's a popup (not typical for this supabase setup usually), we would wait.
@@ -212,6 +219,13 @@ const Auth = () => {
 
         {/* Auth Card */}
         <div className="bg-card border-2 border-foreground p-8">
+          {authError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Name Fields - Only show for signup */}
             {view === 'signup' && (

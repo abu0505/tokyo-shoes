@@ -1,4 +1,4 @@
-# Tokyo Kicks Collection 👟
+# Tokyo Shoes Collection 👟
 
 A premium e-commerce platform tailored for sneaker enthusiasts, built with modern web technologies to provide a seamless and immersive shopping experience.
 
@@ -37,7 +37,7 @@ Follow these steps to run the project locally:
 1.  **Clone the repository**
     ```bash
     git clone <YOUR_GIT_URL>
-    cd tokyo-kicks-collection
+    cd tokyo-shoes-collection
     ```
 
 2.  **Install dependencies**

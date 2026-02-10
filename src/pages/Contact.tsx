@@ -27,6 +27,7 @@ const Contact = () => {
         message: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
     const [honeypot, setHoneypot] = useState('');
 
@@ -70,6 +71,7 @@ const Contact = () => {
             localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
 
             toast.success('Message sent successfully! We\'ll get back to you soon.');
+            setIsSuccess(true);
             setFormData({ name: '', email: '', subject: '', message: '' });
             setHoneypot('');
         } catch (error) {
@@ -216,7 +218,16 @@ const Contact = () => {
                                 <h2 className="text-xl md:text-2xl font-bold">Send a Message</h2>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit} className="space-y-5" data-testid="contact-form">
+                                {/* Success Message */}
+                                {isSuccess && (
+                                    <div
+                                        data-testid="contact-success-message"
+                                        className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-600 text-center font-medium"
+                                    >
+                                        ✓ Message sent successfully! We'll get back to you soon.
+                                    </div>
+                                )}
                                 {/* Honeypot field - invisible to real users */}
                                 <input
                                     type="text"
