@@ -4,9 +4,9 @@ const Footer = () => {
   return (
     <footer className="bg-primary text-primary-foreground py-10 md:py-14" data-testid="main-footer">
       <div className="container px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           {/* Brand */}
-          <div className="md:col-span-2 text-left">
+          <div className="col-span-2 md:col-span-2 text-left">
             <Link to="/" className="inline-block mb-4">
               <img src="/logo.png" alt="Tokyo Shoes" className="h-12 md:h-16 w-auto brightness-0 invert" />
             </Link>

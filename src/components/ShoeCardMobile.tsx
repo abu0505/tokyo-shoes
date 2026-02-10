@@ -234,12 +234,7 @@ const ShoeCardMobile = React.memo(({
             decoding="async"
           />
 
-          {/* Discount Badge */}
-          {discountPercentage > 0 && (
-            <Badge className="absolute top-1 right-1 bg-red-600 hover:bg-red-600 text-white font-bold px-2 py-0.5 text-[10px]">
-              -{discountPercentage}%
-            </Badge>
-          )}
+
 
           {/* NEW Badge */}
           {isNew && (
@@ -300,9 +295,16 @@ const ShoeCardMobile = React.memo(({
           {/* Bottom Section - Price & Status */}
           <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
             <div className="flex flex-col">
-              <p className="text-lg font-black">
-                {formatPrice(shoe.price)}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-black">
+                  {formatPrice(shoe.price)}
+                </p>
+                {discountPercentage > 0 && (
+                  <span className="text-[10px] text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded">
+                    -{discountPercentage}%
+                  </span>
+                )}
+              </div>
               {discountPercentage > 0 && shoe.originalPrice && (
                 <p className="text-[10px] text-muted-foreground line-through">
                   {formatPrice(shoe.originalPrice)}

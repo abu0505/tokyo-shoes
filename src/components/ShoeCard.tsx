@@ -62,20 +62,14 @@ const ShoeCard = React.memo(({
           decoding="async"
         />
 
-        {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-          {discountPercentage > 0 && (
-            <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold px-3 py-1 text-xs justify-center">
-              -{discountPercentage}%
-            </Badge>
-          )}
-          {isNew && (
+        {/* Badges - Only NEW badge on image */}
+        {isNew && (
+          <div className="absolute top-4 left-4">
             <Badge className="bg-accent hover:bg-accent text-accent-foreground font-bold px-3 py-1 text-xs justify-center">
               NEW
             </Badge>
-          )}
-
-        </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col gap-2">
@@ -111,7 +105,7 @@ const ShoeCard = React.memo(({
                 e.stopPropagation();
                 onQuickView(shoe);
               }}
-              className={`hidden md:flex w-12 h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all opacity-50 hover:opacity-100 shadow-lg hover:bg-white/40 ${isDarkBg
+              className={`hidden md:flex w-12 h-12 rounded-full border border-white/30 bg-white/20 backdrop-blur-md transition-all shadow-lg hover:bg-white/40 ${isDarkBg
                 ? 'text-white'
                 : 'text-black'
                 }`}
@@ -156,14 +150,21 @@ const ShoeCard = React.memo(({
           )}
         </div>
 
-        {/* Price */}
+        {/* Price & Discount */}
         <div className="flex items-center justify-between pt-2 md:pt-4 border-t border-border bg-white mt-auto">
-          <div className="flex items-center gap-2">
-            <p className="text-base md:text-2xl font-black">
-              {formatPrice(shoe.price)}
-            </p>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <p className="text-base md:text-2xl font-black">
+                {formatPrice(shoe.price)}
+              </p>
+              {discountPercentage > 0 && (
+                <span className="text-[10px] md:text-xs text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded">
+                  -{discountPercentage}% OFF
+                </span>
+              )}
+            </div>
             {discountPercentage > 0 && shoe.originalPrice && (
-              <p className="text-xs md:text-sm text-muted-foreground line-through">
+              <p className="text-[10px] md:text-xs text-muted-foreground line-through">
                 {formatPrice(shoe.originalPrice)}
               </p>
             )}
