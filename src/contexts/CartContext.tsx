@@ -60,50 +60,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
             try {
                 const { data, error } = await supabase
-                    .from('cart_items')
-                    .select('*, shoes(name, price, image_url, brand)')
-                    .eq('user_id', user.id);
+                    .rpc('get_cart_with_stock', { p_user_id: user.id });
 
                 if (error) throw error;
 
-                // Transform database response to CartItem shape
-                const initialItems: CartItem[] = data.map(item => ({
+                const itemsWithStock: CartItem[] = (data || []).map(item => ({
                     id: item.id,
                     shoeId: item.shoe_id,
-                    name: item.shoes?.name || 'Unknown Shoe',
-                    price: item.shoes?.price || 0,
-                    image: item.shoes?.image_url,
-                    searchImage: item.shoes?.image_url,
+                    name: item.shoe_name || 'Unknown Shoe',
+                    price: item.shoe_price || 0,
+                    image: item.shoe_image,
+                    searchImage: item.shoe_image,
                     quantity: item.quantity,
                     size: item.size,
                     color: item.color,
-                    brand: item.shoes?.brand || item.brand
+                    brand: item.brand,
+                    maxQuantity: item.stock_quantity || 0
                 }));
 
-                // Fetch stock levels for these items - BATched to avoid N+1
-                if (initialItems.length > 0) {
-                    const shoeIds = Array.from(new Set(initialItems.map(item => item.shoeId)));
-
-                    const { data: stockData } = await supabase
-                        .from('shoe_sizes')
-                        .select('shoe_id, size, quantity')
-                        .in('shoe_id', shoeIds);
-
-                    // Create a lookup map for instant access: "shoeId-size" -> quantity
-                    const stockMap = new Map<string, number>();
-                    stockData?.forEach(stock => {
-                        stockMap.set(`${stock.shoe_id}-${stock.size}`, stock.quantity);
-                    });
-
-                    const itemsWithStock = initialItems.map(item => ({
-                        ...item,
-                        maxQuantity: stockMap.get(`${item.shoeId}-${item.size}`) || 0
-                    }));
-
-                    setCartItems(itemsWithStock);
-                } else {
-                    setCartItems(initialItems);
-                }
+                setCartItems(itemsWithStock);
 
             } catch (error) {
                 console.error('Error fetching cart:', error);

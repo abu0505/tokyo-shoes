@@ -119,7 +119,16 @@ const Auth = () => {
         if (error) {
           let errorMessage = error.message;
           if (error.message.includes('Invalid login credentials')) {
-            errorMessage = 'Invalid email or password';
+            // Check if the email exists by attempting OTP sign-in with shouldCreateUser: false
+            const { error: otpError } = await supabase.auth.signInWithOtp({
+              email: data.email,
+              options: { shouldCreateUser: false },
+            });
+            if (otpError && (otpError.message.includes('Signups not allowed') || otpError.message.includes('otp_disabled') || otpError.status === 422)) {
+              errorMessage = 'No account found with this email address. Please sign up first.';
+            } else {
+              errorMessage = 'Incorrect password. Please try again.';
+            }
           }
           setAuthError(errorMessage);
           toast.error(errorMessage);
@@ -345,7 +354,7 @@ const Auth = () => {
               {isSubmitting
                 ? <TextLoader className="text-background" isWhite />
                 : view === 'login'
-                  ? 'SIGN IN'
+                  ? 'LOGIN'
                   : view === 'signup'
                     ? 'CREATE ACCOUNT'
                     : 'SEND RESET LINK'}

@@ -399,6 +399,7 @@ export type Database = {
           price: number
           sizes: number[]
           status: Database["public"]["Enums"]["shoe_status"]
+          thumbnail_url: string | null
           updated_at: string | null
         }
         Insert: {
@@ -412,6 +413,7 @@ export type Database = {
           price: number
           sizes: number[]
           status?: Database["public"]["Enums"]["shoe_status"]
+          thumbnail_url?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -425,6 +427,7 @@ export type Database = {
           price?: number
           sizes?: number[]
           status?: Database["public"]["Enums"]["shoe_status"]
+          thumbnail_url?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -513,6 +516,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_cart_with_stock: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          shoe_id: string
+          quantity: number
+          size: number
+          color: string | null
+          brand: string | null
+          shoe_name: string
+          shoe_price: number
+          shoe_image: string | null
+          stock_quantity: number
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string

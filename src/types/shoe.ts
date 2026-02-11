@@ -6,6 +6,7 @@ export interface Shoe {
   originalPrice?: number; // Original price before discount (if applicable)
   image: string;
   additionalImages?: string[];
+  thumbnailUrl?: string;
   sizes: number[];
   status: 'in_stock' | 'sold_out';
   createdAt: Date;

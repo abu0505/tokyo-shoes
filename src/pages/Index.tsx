@@ -31,7 +31,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shoes')
-        .select('id, name, brand, price, original_price, image_url, sizes, status, created_at')
+        .select('id, name, brand, price, original_price, image_url, thumbnail_url, sizes, status, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -44,6 +44,7 @@ const Index = () => {
         price: shoe.price,
         originalPrice: shoe.original_price || undefined,
         image: shoe.image_url || '',
+        thumbnailUrl: shoe.thumbnail_url || undefined,
         additionalImages: shoe.additional_images || [],
         sizes: shoe.sizes,
         status: shoe.status,

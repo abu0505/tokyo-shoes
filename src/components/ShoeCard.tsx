@@ -51,7 +51,7 @@ const ShoeCard = React.memo(({
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-secondary">
         <img
-          src={getOptimizedImageUrl(shoe.image, 400)}
+          src={shoe.thumbnailUrl || getOptimizedImageUrl(shoe.image, 400)}
           alt={shoe.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"

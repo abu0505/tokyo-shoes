@@ -227,7 +227,7 @@ const ShoeCardMobile = React.memo(({
         {/* Image Container - Left Side */}
         <div className="relative w-[140px] h-[140px] flex-shrink-0 overflow-hidden bg-secondary">
           <img
-            src={getOptimizedImageUrl(shoe.image, 300)}
+            src={shoe.thumbnailUrl || getOptimizedImageUrl(shoe.image, 300)}
             alt={shoe.name}
             className="w-full h-full object-cover"
             draggable={false}
