@@ -93,7 +93,7 @@ const Cart = () => {
                         </h1>
                         <div className="flex justify-between items-center">
                             <p className="text-muted-foreground font-medium">
-                                Free shipping on orders over $200
+                                Free shipping on orders over ₹200
                             </p>
                             <Link to="/#catalog" className="text-sm font-bold underline decoration-2 underline-offset-4 hover:text-accent hidden lg:block">
                                 Continue Shopping

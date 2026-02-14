@@ -226,6 +226,11 @@ const Profile = () => {
         mutationFn: async (values: PasswordFormValues) => {
             if (!user?.email) throw new Error('No user email');
 
+            // 0. Check if new password is same as current
+            if (values.newPassword === values.currentPassword) {
+                throw new Error('New password must be different from your current password');
+            }
+
             // 1. Verify current password
             const { error: signInError } = await supabase.auth.signInWithPassword({
                 email: user.email,

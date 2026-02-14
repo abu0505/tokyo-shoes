@@ -452,8 +452,8 @@ const ProductDetail = () => {
                   return (
                     <button
                       key={size}
-                      onClick={() => !isSoldOut && setSelectedSize(size)}
-                      disabled={isSoldOut}
+                      onClick={() => !isSoldOut && !isSizeOutOfStock && setSelectedSize(size)}
+                      disabled={isSoldOut || isSizeOutOfStock}
                       className={`w-7 md:w-10 h-7 md:h-10 border font-bold text-sm md:text-lg transition-all ${selectedSize === size
                         ? 'border-black bg-black text-white'
                         : 'border-foreground hover:border-black hover:text-black'

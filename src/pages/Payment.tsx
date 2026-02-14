@@ -137,6 +137,21 @@ const Payment = () => {
         setCardName(value);
     };
 
+    // Luhn algorithm to validate card number
+    const isValidLuhn = (number: string): boolean => {
+        const digits = number.replace(/\s/g, "").split("").reverse().map(Number);
+        let sum = 0;
+        for (let i = 0; i < digits.length; i++) {
+            let digit = digits[i];
+            if (i % 2 === 1) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+            sum += digit;
+        }
+        return sum % 10 === 0;
+    };
+
     // Get card brand from number
     const getCardBrand = (number: string) => {
         const cleaned = number.replace(/\s/g, "");
@@ -174,8 +189,21 @@ const Payment = () => {
                 toast.error("Please fill in all card details");
                 return;
             }
-            if (cardNumber.replace(/\s/g, "").length < 16) {
-                toast.error("Please enter a valid card number");
+            const cleanedCardNumber = cardNumber.replace(/\s/g, "");
+            if (cleanedCardNumber.length < 16) {
+                toast.error("Please enter a valid 16-digit card number");
+                return;
+            }
+
+            // Luhn algorithm check
+            if (!isValidLuhn(cleanedCardNumber)) {
+                toast.error("Invalid card number. Please check and try again.");
+                return;
+            }
+
+            // CVV length validation
+            if (cardCvv.length < 3) {
+                toast.error("CVV must be at least 3 digits");
                 return;
             }
 

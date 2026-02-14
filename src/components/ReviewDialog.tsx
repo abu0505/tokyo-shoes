@@ -75,9 +75,13 @@ const ReviewDialog = ({ isOpen, onClose, shoeId, userId, onReviewSubmitted }: Re
             toast.success("Review submitted successfully!");
             if (onReviewSubmitted) onReviewSubmitted();
             handleClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting review:", error);
-            toast.error("Failed to submit review");
+            if (error?.code === '23505') {
+                toast.error("You have already reviewed this product");
+            } else {
+                toast.error("Failed to submit review");
+            }
         } finally {
             setIsSubmitting(false);
         }

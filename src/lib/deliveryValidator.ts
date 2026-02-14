@@ -156,7 +156,7 @@ export async function checkDeliveryAvailability(
     // it might be outside our 5km radius
     return {
         available: false,
-        message: "Sorry, this location is outside our 5km delivery radius. We deliver only near Juhapura, Ahmedabad."
+        message: "Sorry, we currently don't deliver to this pincode. We deliver only to select areas near Juhapura, Ahmedabad."
     };
 }
 
