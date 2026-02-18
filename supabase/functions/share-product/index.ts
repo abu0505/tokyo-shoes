@@ -34,6 +34,10 @@ function isCrawler(userAgent: string | null): boolean {
     return CRAWLER_USER_AGENTS.some(bot => userAgent.toLowerCase().includes(bot.toLowerCase()))
 }
 
+function escapeHtmlAttr(str: string): string {
+    return str.replace(/&/g, '&amp;')
+}
+
 
 
 serve(async (req: Request) => {
@@ -109,13 +113,13 @@ serve(async (req: Request) => {
     <!-- Essential Open Graph Meta Tags -->
     <meta property="og:title" content="${escapedTitle}">
     <meta property="og:description" content="${escapedDescription}">
-    <meta property="og:image" content="${imageUrl}">
-    <meta property="og:image:secure_url" content="${imageUrl}">
+    <meta property="og:image" content="${escapeHtmlAttr(imageUrl)}">
+    <meta property="og:image:secure_url" content="${escapeHtmlAttr(imageUrl)}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:alt" content="${escapedTitle}">
-    <meta property="og:url" content="${redirectUrl}">
+    <meta property="og:url" content="${escapeHtmlAttr(redirectUrl)}">
     <meta property="og:type" content="product">
     <meta property="og:site_name" content="Tokyo Shoes">
     <meta property="og:locale" content="en_US">
@@ -124,7 +128,7 @@ serve(async (req: Request) => {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${escapedTitle}">
     <meta name="twitter:description" content="${escapedDescription}">
-    <meta name="twitter:image" content="${imageUrl}">
+    <meta name="twitter:image" content="${escapeHtmlAttr(imageUrl)}">
     <meta name="twitter:site" content="@TokyoShoes">
 </head>
 <body>
