@@ -36,8 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
     const payload = await req.json();
     const record: OrderRecord = payload.record;
 
-    console.log(`--- NEW WEBHOOK RECEIVED ---`);
-    console.log(`Processing Order ID: ${record?.id}`);
+    console.log(`Processing order webhook for order: ${record?.id}`);
 
     if (!RESEND_API_KEY) {
       console.error("CRITICAL: RESEND_API_KEY is missing!");
@@ -54,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response("Error: User not found", { status: 404, headers: corsHeaders });
     }
     const userEmail = userData.user.email;
-    console.log(`Target Email: ${userEmail}`);
+    console.log(`Sending order email for order: ${record.id}`);
 
     // 3. Get Order Items
     const { data: orderItems, error: itemsError } = await supabase
@@ -226,10 +225,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const data = await res.json();
 
-    // --- VITAL LOGGING ---
     console.log("Resend API Status:", res.status);
-    console.log("Resend Response Body:", JSON.stringify(data, null, 2));
-    // ---------------------
 
     if (!res.ok) {
       console.error("RESEND FAILED:", data);
@@ -241,8 +237,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error: any) {
-    console.error("CRITICAL FUNCTION ERROR:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Function error:", error.message);
+    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
