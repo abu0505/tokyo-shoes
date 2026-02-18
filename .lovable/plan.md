@@ -1,44 +1,42 @@
 
 
-## Fix: Product Images Not Showing in iOS WhatsApp Link Previews
+## Fix: iOS WhatsApp Link Preview Image - HTML Entity Escaping
 
-### Problem
-The `share-product` edge function serves product images in WebP format via `og:image` meta tags. While Android and desktop WhatsApp handle WebP fine, **iOS WhatsApp's link preview crawler does not reliably render WebP images**. This is a well-documented platform limitation.
+### Root Cause
+The previous wsrv.nl proxy fix was correct in concept, but the generated HTML contains **unescaped `&` characters** inside meta tag `content` attributes:
+
+```html
+<!-- CURRENT (broken on iOS) -->
+<meta property="og:image" content="https://wsrv.nl/?url=...&output=jpg&w=1200&q=80">
+```
+
+In valid HTML, `&` inside attributes must be `&amp;`. iOS's WebKit parser is strict about this and truncates the URL at the first bare `&`, so the actual URL iOS reads becomes just `https://wsrv.nl/?url=...` (missing the conversion parameters). Android's parser is more lenient and handles it fine, which is why it works there.
 
 ### Solution
-Use a free image proxy service (`wsrv.nl`) to convert the WebP image to JPEG on-the-fly when generating OG meta tags for crawlers. This service is widely used, fast, and requires no API key.
+In `supabase/functions/share-product/index.ts`, create a helper function to escape `&` as `&amp;` for URLs used in HTML attributes. Apply it to all meta tag URLs (og:image, og:image:secure_url, twitter:image).
 
 ### Changes
 
 **File: `supabase/functions/share-product/index.ts`**
 
-1. Create a helper function that wraps the original Supabase storage image URL through `wsrv.nl` to convert it to JPEG format:
-   - URL pattern: `https://wsrv.nl/?url={encoded_original_url}&output=jpg&w=1200&q=80`
-   - This ensures the image served to crawlers is always JPEG, which all platforms support
+1. Add a helper function to escape URLs for HTML attributes:
+   ```typescript
+   function escapeHtmlAttr(str: string): string {
+       return str.replace(/&/g, '&amp;')
+   }
+   ```
 
-2. Update the OG meta tags in the HTML response:
-   - Change `og:image` and `og:image:secure_url` to use the proxied JPEG URL
-   - Change `og:image:type` from `image/webp` to `image/jpeg`
-   - Update `twitter:image` to also use the proxied JPEG URL
+2. Use it when embedding URLs in meta tags. The `imageUrl` variable stays the same for any non-HTML use, but inside the HTML template, all URL references use `escapeHtmlAttr(imageUrl)`:
+   ```html
+   <meta property="og:image" content="${escapeHtmlAttr(imageUrl)}">
+   ```
 
-3. Keep the rest of the function unchanged (crawler detection, redirect logic, etc.)
+3. Also escape the `redirectUrl` in meta tags (it currently doesn't have `&` but future-proofing).
 
-### Technical Details
+This is a one-line helper + updating ~5 meta tag references in the HTML template. No other files change.
 
-The only file modified is `supabase/functions/share-product/index.ts`. The key change is roughly:
-
-```
-// Before
-const imageUrl = product.image_url || ''
-
-// After  
-const rawImageUrl = product.image_url || ''
-const imageUrl = rawImageUrl 
-  ? `https://wsrv.nl/?url=${encodeURIComponent(rawImageUrl)}&output=jpg&w=1200&q=80`
-  : ''
-```
-
-And updating `og:image:type` from `image/webp` to `image/jpeg`.
-
-This approach requires no additional infrastructure, no paid plans, and no stored duplicate images. The edge function will be redeployed automatically after the change.
+### Why This Works
+- iOS WebKit sees `&amp;output=jpg&amp;w=1200&amp;q=80` and correctly decodes it to `&output=jpg&w=1200&q=80` when making the HTTP request
+- Android already works and will continue to work (both escaped and unescaped `&` are handled)
+- The wsrv.nl proxy itself is functioning correctly (verified: it returns valid JPEG binary data)
 
