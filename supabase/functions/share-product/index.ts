@@ -86,8 +86,11 @@ serve(async (req: Request) => {
         const title = product.name
         const description = `Check out these ${product.name} at Tokyo Shoes!`
 
-        // Use original image URL directly (Image Transformations require Pro plan)
-        const imageUrl = product.image_url || ''
+        // Convert image to JPEG via wsrv.nl proxy for iOS compatibility
+        const rawImageUrl = product.image_url || ''
+        const imageUrl = rawImageUrl 
+            ? `https://wsrv.nl/?url=${encodeURIComponent(rawImageUrl)}&output=jpg&w=1200&q=80`
+            : ''
 
         // Escape quotes in title for meta tags
         const escapedTitle = title.replace(/"/g, '&quot;')
@@ -110,7 +113,7 @@ serve(async (req: Request) => {
     <meta property="og:image:secure_url" content="${imageUrl}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:type" content="image/webp">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:alt" content="${escapedTitle}">
     <meta property="og:url" content="${redirectUrl}">
     <meta property="og:type" content="product">
